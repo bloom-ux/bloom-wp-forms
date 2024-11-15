@@ -1,0 +1,22 @@
+{
+  "name": "bloom-forms",
+  "version": "0.1.0",
+  "description": "Custom forms scaffolding for WordPress",
+  "license": "GPL-3.0-or-later",
+  "private": true,
+  "scripts": {
+    "build": "encore production",
+    "start": "encore dev --watch"
+  },
+  "devDependencies": {
+    "@symfony/webpack-encore": "^4.2.0",
+    "@wordpress/babel-preset-default": "^7.8.0",
+    "@wordpress/dependency-extraction-webpack-plugin": "^5.1.0",
+    "@wordpress/eslint-plugin": "^17.7.0",
+    "@wordpress/prettier-config": "^3.7.0",
+    "@wordpress/scripts": "^30.4.0",
+    "postcss-loader": "^7.3.4",
+    "sass": "^1.57.1",
+    "sass-loader": "^14.1.0"
+  }
+}

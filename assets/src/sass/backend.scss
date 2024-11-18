@@ -1,0 +1,99 @@
+// Back-end styles
+.bloom-forms-entry {
+	display: grid;
+	grid-template-columns: 1fr minmax(200px, 20%);
+	gap: 2rem;
+}
+.bloom-forms-admin__th--id {
+	width: 3rem;
+}
+.bloom-forms-admin__th--date,
+.bloom-forms-admin__th--notifications {
+	width: 12%;
+}
+
+@keyframes spin {
+	to { transform: rotate(360deg); }
+}
+
+.bloom-forms-admin__title {
+	display: flex;
+	gap: .5em;
+	align-items: center;
+	&::after {
+		opacity: 0;
+		content: '';
+		display: inline-block;
+		width: .75em;
+		height: .75em;
+		border: 2px solid #999;
+		border-top-color: transparent;
+		border-radius: 1em;
+		animation: spin 400ms linear infinite forwards;
+		transition: all .15s linear;
+	}
+	&.htmx-request {
+		&::after {
+			opacity: 1;
+		}
+		+ form + table {
+			opacity: .5;
+			pointer-events: none;
+		}
+		+ .tablenav .tablenav-pages {
+			opacity: .5;
+			pointer-events: none;
+		}
+	}
+}
+
+.bloom-forms-admin__table {
+	margin-top: 1rem;
+	table-layout: fixed;
+	transition: all .2s linear;
+}
+
+td.bloom-forms-entries__status {
+	display: flex;
+	flex-flow: column;
+	details {
+		padding: 8px;
+		border-bottom: 1px dotted rgba(0, 0, 0, 0.35);
+		position: relative;
+		&:first-child {
+			padding-top: 0;
+		}
+		&:last-child {
+			border-bottom: 0;
+			padding-bottom: 0;
+		}
+	}
+	summary {
+		cursor: pointer;
+		.dashicons {
+			float: right;
+		}
+	}
+}
+
+.queulat-form {
+	.control-group {
+		border-top: 1px dotted #ccc;
+		margin-bottom: 8px;
+		& > p {
+			margin-top: 0;
+		}
+		& > p > label {
+			font-weight: bold;
+			display: block;
+			padding: 8px 0;
+		}
+		li > label {
+			display: block;
+			padding: 4px 0;
+		}
+		&:first-child {
+			border-top: 0;
+		}
+	}
+}

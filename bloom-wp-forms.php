@@ -13,5 +13,9 @@
 
 namespace Bloom_UX\WP_Forms;
 
+if ( is_readable( __DIR__ . '/vendor/autoload.php' ) ) {
+	require_once __DIR__ . '/vendor/autoload.php';
+}
+
 $bloom_forms = Plugin::get_instance();
 register_activation_hook( __FILE__, array( $bloom_forms, 'activation_hook' ) );

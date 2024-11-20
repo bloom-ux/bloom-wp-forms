@@ -20,10 +20,3 @@ Scaffolding para formularios personalizados en WordPress
 Puedes usar las acciones o filtros definidos en el plugin para integraciones más específicas.
 
 Identifica los lugares en que se definen buscando: `(?:do_action|apply_filters)\(\s*(?:'|")bloom_forms`
-
-
----
-
-# TODO
-
-- [ ] definir filtros para generar interfaz de administración

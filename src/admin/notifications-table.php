@@ -42,11 +42,7 @@ use Bloom_UX\WP_Forms\Plugin;
 					<?php echo esc_html( $n->get_created_on()->format( 'Y-m-d H:i:s' ) ); ?>
 				</td>
 				<td>
-					<?php if ( $n->was_read() ) : ?>
-						Leída <span class="dashicons dashicons-yes"></span><span class="dashicons dashicons-yes" style="margin-left:-.5em"></span>
-					<?php else : ?>
-						<?php echo esc_html( $n->get_last_status_label() ); ?>
-					<?php endif; ?>
+					<?php echo esc_html( $n->get_last_status_label() ); ?>
 					<?php if ( $n->get_last_status() === 'send_error' ) : ?>
 					- <a href="<?php echo esc_url( Plugin::get_instance()->get_resend_url( $n ) ); ?>">Reenviar</a>
 					<?php endif; ?>

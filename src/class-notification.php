@@ -308,7 +308,8 @@ class Notification {
 	public function get_message(): string {
 		$entry = $this->get_entry();
 		$form  = new \Queulat\Forms\Element\Form();
-		$form->set_view( Notification_View::class );
+		$view_class = apply_filters( 'bloom_forms_notification_class', '\Bloom_UX\WP_Forms\Notification_View', $this );
+		$form->set_view( $view_class );
 		$form->set_property( 'title', $entry->get_form()->get_title() );
 		$form->set_property( 'submitted_date', $entry->get_submitted_on() );
 		$form->set_property( 'entry_id', $this->get_entry()->get_id() );
@@ -327,6 +328,23 @@ class Notification {
 		$notification_type = $this->get_meta( 'type' );
 		require __DIR__ . '/../email/notification-template.php';
 		return ob_get_clean();
+	}
+
+	/**
+	 * Obtener enlace para acceder a los datos del formulario y marcar notificación como leída
+	 *
+	 * @return string URL de acceso a datos y registro de acceso
+	 */
+	public function get_action_link() {
+		return add_query_arg(
+			array(
+				'action'          => 'bloom_forms_admin__view',
+				'entry_id'        => $this->get_entry()->get_id(),
+				'page'            => 'bloom_forms_entries_admin',
+				'notification_id' => $this->get_id(),
+			),
+			admin_url( 'admin.php' )
+		);
 	}
 
 	/**

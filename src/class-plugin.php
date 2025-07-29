@@ -248,6 +248,28 @@ class Plugin {
 	}
 
 	/**
+	 * Obtener conteo de notificaciones por estado
+	 *
+	 * @return array Conteo de notificaciones por estado
+	 */
+	public function get_notifications_counts_by_status(): array {
+		$all_count        = "select count( id ) as q from {$this->wpdb->uddforms_notifications}";
+		$counts_query     = "select count( id ) as q, JSON_VALUE( status_log, '$[0].status' ) as status from {$this->wpdb->uddforms_notifications} group by status";
+		$counts_by_status = $this->wpdb->get_results( $counts_query ); //phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$counts           = array_reduce(
+			$counts_by_status,
+			function ( $carry, $item ) {
+				$carry[ $item->status ] = $item->q;
+				return $carry;
+			},
+			array(
+				'all' => (int) $this->wpdb->get_var( $all_count ), //phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			)
+		);
+		return $counts;
+	}
+
+	/**
 	 * Obtener URL para intentar reenvío de notificación
 	 *
 	 * @param Notification $notification Instancia de la notificación.

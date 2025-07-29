@@ -14,7 +14,7 @@ $notifications     = Notifications_Repository::get_instance()->find_by_query(
 	array(
 		'per_page' => $n_per_page,
 		'paged'    => filter_input( INPUT_GET, 'paged', FILTER_SANITIZE_NUMBER_INT ) ? filter_input( INPUT_GET, 'paged', FILTER_SANITIZE_NUMBER_INT ) : 1,
-		'status'   => filter_input( INPUT_GET, 'status', FILTER_SANITIZE_STRING ),
+		'status'   => sanitize_key( filter_input( INPUT_GET, 'status' ) ),
 	)
 );
 $all_link          = admin_url( 'admin.php?page=bloom_forms_notifications_admin' );

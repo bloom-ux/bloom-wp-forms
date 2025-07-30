@@ -60,24 +60,6 @@ namespace Bloom_UX\WP_Forms;
 													?>
 												</td>
 											</tr>
-											<tr>
-												<td>
-													<table cellspacing="0" cellpadding="0" border="0" align="center" style="text-align: center; color: #222; font-size: 16px; line-height: 24px; padding-bottom: 10px;">
-														<tr>
-															<td align="center" style="text-align: center; padding: 0 20px;">
-																<p><!-- Mensaje genérico para acción --></p>
-																<p>
-																	<a style="display: inline-block; color: #fff; background: #666; font-weight: 700; padding: 10px 20px; border-radius: 25px; text-decoration: none" href="<?php echo esc_url( $action_link ); ?>">
-																		<!-- Texto del botón -->
-																		Ver envío en panel
-																	</a>
-																</p>
-																<br>
-															</td>
-														</tr>
-													</table>
-												</td>
-											</tr>
 										</table>
 									</td>
 								</tr> <!-- /main genérico -->

@@ -106,7 +106,7 @@ class Notification {
 			return;
 		}
 		$data       = (object) $data;
-		$this->id   = (int) $data->id;
+		$this->id   = ! empty( $data->id ) ? (int) $data->id : 0;
 		$this->form = Plugin::get_instance()->get_form( $data->form );
 		if ( ! empty( $data->entry_id ) ) {
 			$this->entry = Entries_Repository::get_instance()->find_by_id( $data->entry_id );
@@ -323,10 +323,15 @@ class Notification {
 			$form->append_child( $field );
 		}
 		ob_start();
-		$template_path     = plugins_url( '/../email', __FILE__ );
-		$action_link       = $this->get_action_link();
-		$notification_type = $this->get_meta( 'type' );
-		require __DIR__ . '/../email/notification-template.php';
+		$template_path         = plugins_url( '/email', __FILE__ );
+		$action_link           = $this->get_action_link();
+		$notification_type     = $this->get_meta( 'type' );
+		$notification_template = apply_filters(
+			'bloom_forms_notification_template_path',
+			__DIR__ . '/email/notification-template.php',
+			$this
+		);
+		require $notification_template;
 		return ob_get_clean();
 	}
 

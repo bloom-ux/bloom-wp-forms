@@ -67,9 +67,9 @@ namespace Bloom_UX\WP_Forms;
 															<td align="center" style="text-align: center; padding: 0 20px;">
 																<p><!-- Mensaje genérico para acción --></p>
 																<p>
-																	<a style="display: inline-block; color: #fff; background: #0074d9; font-weight: 700; padding: 10px 20px; border-radius: 25px; text-decoration: none" href="<?php echo esc_url( $action_link ); ?>">
+																	<a style="display: inline-block; color: #fff; background: #666; font-weight: 700; padding: 10px 20px; border-radius: 25px; text-decoration: none" href="<?php echo esc_url( $action_link ); ?>">
 																		<!-- Texto del botón -->
-																		Ver envío
+																		Ver envío en panel
 																	</a>
 																</p>
 																<br>

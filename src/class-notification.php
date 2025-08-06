@@ -106,7 +106,7 @@ class Notification {
 			return;
 		}
 		$data       = (object) $data;
-		$this->id   = (int) $data->id;
+		$this->id   = ! empty( $data->id ) ? (int) $data->id : 0;
 		$this->form = Plugin::get_instance()->get_form( $data->form );
 		if ( ! empty( $data->entry_id ) ) {
 			$this->entry = Entries_Repository::get_instance()->find_by_id( $data->entry_id );
@@ -308,7 +308,8 @@ class Notification {
 	public function get_message(): string {
 		$entry = $this->get_entry();
 		$form  = new \Queulat\Forms\Element\Form();
-		$form->set_view( Notification_View::class );
+		$view_class = apply_filters( 'bloom_forms_notification_class', '\Bloom_UX\WP_Forms\Notification_View', $this );
+		$form->set_view( $view_class );
 		$form->set_property( 'title', $entry->get_form()->get_title() );
 		$form->set_property( 'submitted_date', $entry->get_submitted_on() );
 		$form->set_property( 'entry_id', $this->get_entry()->get_id() );
@@ -322,11 +323,33 @@ class Notification {
 			$form->append_child( $field );
 		}
 		ob_start();
-		$template_path     = plugins_url( '/../email', __FILE__ );
-		$action_link       = $this->get_action_link();
-		$notification_type = $this->get_meta( 'type' );
-		require __DIR__ . '/../email/notification-template.php';
+		$template_path         = plugins_url( '/email', __FILE__ );
+		$action_link           = $this->get_action_link();
+		$notification_type     = $this->get_meta( 'type' );
+		$notification_template = apply_filters(
+			'bloom_forms_notification_template_path',
+			__DIR__ . '/email/notification-template.php',
+			$this
+		);
+		require $notification_template;
 		return ob_get_clean();
+	}
+
+	/**
+	 * Obtener enlace para acceder a los datos del formulario y marcar notificación como leída
+	 *
+	 * @return string URL de acceso a datos y registro de acceso
+	 */
+	public function get_action_link() {
+		return add_query_arg(
+			array(
+				'action'          => 'bloom_forms_admin__view',
+				'entry_id'        => $this->get_entry()->get_id(),
+				'page'            => 'bloom_forms_entries_admin',
+				'notification_id' => $this->get_id(),
+			),
+			admin_url( 'admin.php' )
+		);
 	}
 
 	/**

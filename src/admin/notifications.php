@@ -34,7 +34,7 @@ $last_page_url     = add_query_arg( array( 'paged' => $total_pages ), admin_url(
 	<h1>Notificaciones</h1>
 	<ul class="subsubsub">
 		<li>
-			<a <?php echo ( ! filter_input( INPUT_GET, 'status', FILTER_SANITIZE_STRING ) ? 'class="current" aria-current="page"' : '' ); ?> href="<?php echo esc_url( $all_link ); ?>">Todo
+			<a <?php echo ( ! sanitize_text_field( filter_input( INPUT_GET, 'status' ) ) ? 'class="current" aria-current="page"' : '' ); ?> href="<?php echo esc_url( $all_link ); ?>">Todo
 			<?php if ( ! empty( $counts['all'] ) ) : ?>
 			<span class="count">(<?php echo esc_html( $counts['all'] ); ?>)</span>
 			<?php endif; ?>
@@ -42,19 +42,19 @@ $last_page_url     = add_query_arg( array( 'paged' => $total_pages ), admin_url(
 		</li>
 		<?php if ( ! empty( $counts['scheduled'] ) ) : ?>
 		<li>
-			<a <?php echo ( 'scheduled' === filter_input( INPUT_GET, 'status', FILTER_SANITIZE_STRING ) ? 'class="current" aria-current="page"' : '' ); ?>href="<?php echo esc_url( $pending_link ); ?>"> Pendientes
+			<a <?php echo ( 'scheduled' === sanitize_text_field( filter_input( INPUT_GET, 'status' ) ) ? 'class="current" aria-current="page"' : '' ); ?>href="<?php echo esc_url( $pending_link ); ?>"> Pendientes
 			<span class="count">(<?php echo esc_html( $counts['scheduled'] ); ?>)</span></a> |
 		</li>
 		<?php endif; ?>
 		<?php if ( ! empty( $counts['send_error'] ) ) : ?>
 		<li>
-			<a <?php echo ( 'send_error' === filter_input( INPUT_GET, 'status', FILTER_SANITIZE_STRING ) ? 'class="current" aria-current="page"' : '' ); ?>href="<?php echo esc_url( $failed_link ); ?>"> Con errores
+			<a <?php echo ( 'send_error' === sanitize_text_field( filter_input( INPUT_GET, 'status' ) ) ? 'class="current" aria-current="page"' : '' ); ?>href="<?php echo esc_url( $failed_link ); ?>"> Con errores
 			<span class="count">(<?php echo esc_html( $counts['send_error'] ); ?>)</span></a> |
 		</li>
 		<?php endif; ?>
 		<?php if ( ! empty( $counts['send_success'] ) ) : ?>
 		<li>
-			<a <?php echo ( 'send_success' === filter_input( INPUT_GET, 'status', FILTER_SANITIZE_STRING ) ? 'class="current" aria-current="page"' : '' ); ?>href="<?php echo esc_url( $sent_link ); ?>"> Enviadas
+			<a <?php echo ( 'send_success' === sanitize_text_field( filter_input( INPUT_GET, 'status' ) ) ? 'class="current" aria-current="page"' : '' ); ?>href="<?php echo esc_url( $sent_link ); ?>"> Enviadas
 			<span class="count">(<?php echo esc_html( $counts['send_success'] ); ?>)</span></a>
 		</li>
 		<?php endif; ?>

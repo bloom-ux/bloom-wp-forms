@@ -34,7 +34,7 @@ namespace Bloom_UX\WP_Forms;
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width,initial-scale=1">
-	<title><?php echo esc_html( $form->get_property( 'title' ) ); ?></title>
+   <title><?php echo esc_html( $view->title ); ?></title>
 </head>
 <body style="margin: 0; background-color: #f6f6f6; color: #222; font-family: Arial, Helvetica, sans-serif; font-size: 16px; line-height: 22px; min-width: 100%; padding: 0; max-width: 650px;">
 	<table align="center" style="margin: 0 auto; border-spacing: 0; color: #222; font-family: Arial, Helvetica, sans-serif; width: 100%; max-width: 650px;">
@@ -50,14 +50,14 @@ namespace Bloom_UX\WP_Forms;
 						<td align="center">
 							<table align="center" style="margin-left: auto; margin-right: auto; border-spacing: 0; max-width: 650px; width: 100%;">
 								<tr>
-									<td align="center" bgcolor="#ffffff" style="font-family: Arial, Helvetica, sans-serif; padding: 32px 20px 0 20px; text-align: center; background-color: #fff;">
+									<td align="center" bgcolor="#ffffff" style="font-family: Arial, Helvetica, sans-serif; padding: 32px 20px 40px 20px; text-align: center; background-color: #fff;">
 										<table cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto; border-spacing: 0; width: 100%; max-width: 470px;">
 											<tr>
 												<td style="text-align: left; color: #222; font-size: 16px; line-height: 24px;">
-													<?php
-														// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-														echo $form;
-													?>
+												   <?php
+													   // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+													   echo $view;
+												   ?>
 												</td>
 											</tr>
 										</table>

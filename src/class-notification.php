@@ -294,7 +294,8 @@ class Notification {
 	 * @return void
 	 */
 	public function send() {
-		$this->send_async();
+		// $this->send_async();
+		$this->send_sync();
 	}
 
 	/**
@@ -306,33 +307,36 @@ class Notification {
 	 * @return string HTML del mensaje de notificación.
 	 */
 	public function get_message(): string {
-		$entry = $this->get_entry();
-		$form  = new \Queulat\Forms\Element\Form();
-		$view_class = apply_filters( 'bloom_forms_notification_class', '\Bloom_UX\WP_Forms\Notification_View', $this );
-		$form->set_view( $view_class );
-		$form->set_property( 'title', $entry->get_form()->get_title() );
-		$form->set_property( 'submitted_date', $entry->get_submitted_on() );
-		$form->set_property( 'entry_id', $this->get_entry()->get_id() );
-		$form->set_property( 'notification_id', $this->get_id() );
-		$values = (array) $entry->get_data();
-		foreach ( $entry->get_form()->get_fields() as $field ) {
-			$can_set_value = is_callable( array( $field, 'get_name' ) ) && is_callable( array( $field, 'set_value' ) ) ? $field->get_name() : null;
-			if ( $can_set_value && ! empty( $values[ $can_set_value ] ) ) {
-				$field->set_value( $values[ $can_set_value ] );
-			}
-			$form->append_child( $field );
-		}
+		$entry                   = $this->get_entry();
+		$form                    = $entry ? $entry->get_form() : null;
+		$view_class              = apply_filters( 'bloom_forms_notification_class', '\Bloom_UX\WP_Forms\Notification_View', $this );
+		$view                    = new $view_class();
+		$view->title             = $form ? $form->get_title() : '';
+		$view->submitted_date    = $entry ? $entry->get_submitted_on() : '';
+		$view->entry_id          = $entry ? $entry->get_id() : '';
+		$view->notification_id   = $this->get_id();
+		$view->fields            = $form ? $form->get_fields() : array();
+		$view->values            = $entry ? (array) $entry->get_data() : array();
+		$view->action_link       = $this->get_action_link();
+		$view->notification_type = $this->get_meta( 'type' );
+		// Respuesta.
 		ob_start();
-		$template_path         = plugins_url( '/email', __FILE__ );
-		$action_link           = $this->get_action_link();
-		$notification_type     = $this->get_meta( 'type' );
 		$notification_template = apply_filters(
 			'bloom_forms_notification_template_path',
 			__DIR__ . '/email/notification-template.php',
 			$this
 		);
 		require $notification_template;
-		return ob_get_clean();
+		$output = ob_get_clean();
+		/**
+		* Permitir filtrar el output HTML del mensaje antes de retornarlo
+		*
+		* @param string $output HTML del mensaje.
+		* @param Notification $notification Instancia de la notificación.
+		* @param Notification_View $view Vista de la notificación.
+		*/
+		$output = apply_filters( 'bloom_forms_notification_message_output', $output, $this, $view );
+		return $output;
 	}
 
 	/**
@@ -390,6 +394,29 @@ class Notification {
 	 * @return void
 	 */
 	public function send_sync() {
+		// Construir los datos del correo
+		$to      = $this->get_email();
+		$subject = $this->get_subject();
+		$message = $this->get_message();
+		$headers = array( 'Content-Type: text/html; charset=UTF-8' );
+
+		/**
+		 * Permitir modificar los parámetros del correo antes de enviar.
+		 */
+		$to      = apply_filters( 'bloom_forms_notification_mail_to', $to, $this );
+		$subject = apply_filters( 'bloom_forms_notification_mail_subject', $subject, $this );
+		$message = apply_filters( 'bloom_forms_notification_mail_message', $message, $this );
+		$headers = apply_filters( 'bloom_forms_notification_mail_headers', $headers, $this );
+
+		// Enviar correo.
+		$result = wp_mail( $to, $subject, $message, $headers );
+
+		if ( $result ) {
+			$this->register_status( 'send_success' );
+		} else {
+			$this->register_status( 'send_error' );
+		}
+		$this->save();
 	}
 
 	/**

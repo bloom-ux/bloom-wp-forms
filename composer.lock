@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "cd2422f587314fa8094627554e4a5c3d",
+    "content-hash": "2dfa1852989fe39f5d8ccaf5cee2f5f4",
     "packages": [
         {
             "name": "bloom-ux/wpdb-monolog",
-            "version": "dev-ft/php8",
+            "version": "dev-php8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/bloom-ux/wpdb-monolog.git",
-                "reference": "3f2a8159cd16b73565bce2fb9439ba0dfb05f774"
+                "reference": "4ae824e920a4b9b5085f748e34262182ae226f8d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/bloom-ux/wpdb-monolog/zipball/3f2a8159cd16b73565bce2fb9439ba0dfb05f774",
-                "reference": "3f2a8159cd16b73565bce2fb9439ba0dfb05f774",
+                "url": "https://api.github.com/repos/bloom-ux/wpdb-monolog/zipball/4ae824e920a4b9b5085f748e34262182ae226f8d",
+                "reference": "4ae824e920a4b9b5085f748e34262182ae226f8d",
                 "shasum": ""
             },
             "require": {
@@ -28,6 +28,9 @@
                 "installer-name": "bloom-ux-wpdb-monolog"
             },
             "autoload": {
+                "files": [
+                    "src/functions.php"
+                ],
                 "classmap": [
                     "src/"
                 ]
@@ -39,15 +42,15 @@
             "authors": [
                 {
                     "name": "Felipe Lavín Z.",
-                    "email": "felipe@bloom-ux.com"
+                    "email": "felipe@bloom.lat"
                 }
             ],
-            "description": "Integrate monolog logging with $wpdb using wonolog",
+            "description": "Integrate monolog logging with $wpdb",
             "support": {
                 "issues": "https://github.com/bloom-ux/wpdb-monolog/issues",
-                "source": "https://github.com/bloom-ux/wpdb-monolog/tree/ft/php8"
+                "source": "https://github.com/bloom-ux/wpdb-monolog/tree/php8"
             },
-            "time": "2024-11-18T00:07:56+00:00"
+            "time": "2025-12-05T15:32:07+00:00"
         },
         {
             "name": "composer/installers",

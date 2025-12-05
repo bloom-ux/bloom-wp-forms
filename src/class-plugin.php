@@ -13,11 +13,10 @@ use Monolog\Logger;
 use Queulat\Singleton;
 use Queulat\Validator;
 use Queulat\Helpers\Webpack_Asset_Loader;
-use WP;
 use WP_Role;
 
-use function bloom\WPDB_Monolog\set_channel_level;
-use function bloom\WPDB_Monolog\get_logger_for_channel;
+use function Bloom_UX\WPDB_Monolog\set_channel_level;
+use function Bloom_UX\WPDB_Monolog\get_logger_for_channel;
 
 /**
  * Clase principal del plugin

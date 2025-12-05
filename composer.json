@@ -16,7 +16,7 @@
         "php": ">=8.2",
         "composer/installers": "^2",
         "deliciousbrains/wp-background-processing": "^1.3",
-        "bloom-ux/wpdb-monolog": "dev-ft/php8"
+        "bloom-ux/wpdb-monolog": "dev-php8"
     },
     "require-dev": {
         "dealerdirect/phpcodesniffer-composer-installer": "^1.0",

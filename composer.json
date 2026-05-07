@@ -13,10 +13,10 @@
     "minimum-stability": "dev",
     "prefer-stable": true,
     "require": {
-        "php": ">=8.2",
+        "php": ">=7.4",
         "composer/installers": "^2",
         "deliciousbrains/wp-background-processing": "^1.3",
-        "bloom-ux/wpdb-monolog": "dev-php8"
+        "bloom-ux/wpdb-monolog": "dev-main"
     },
     "require-dev": {
         "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
@@ -30,7 +30,7 @@
         "fix": "phpcbf --standard=WordPress *.php src/",
         "lint": "parallel-lint ./ --blame --exclude vendor --exclude node_modules",
         "sniff": "phpcs --standard=WordPress *.php src/ --cache",
-        "compat": "phpcs --standard=PHPCompatibility *.php src/*.php --ignore=vendor --runtime-set testVersion 7.2 --cache",
+        "compat": "phpcs --standard=PHPCompatibility *.php src/*.php --ignore=vendor --runtime-set testVersion 7.4 --cache",
         "post-create-project-cmd": [
             "npm install",
             "npx encore production"
@@ -42,7 +42,7 @@
             "composer/installers": true
         },
         "platform": {
-            "php": "8.2"
+            "php": "7.4"
         }
     },
     "extra": {

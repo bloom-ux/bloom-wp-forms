@@ -15,8 +15,8 @@ use Queulat\Validator;
 use Queulat\Helpers\Webpack_Asset_Loader;
 use WP_Role;
 
-use function Bloom_UX\WPDB_Monolog\set_channel_level;
-use function Bloom_UX\WPDB_Monolog\get_logger_for_channel;
+use function bloom\WPDB_Monolog\set_channel_level;
+use function bloom\WPDB_Monolog\get_logger_for_channel;
 
 /**
  * Clase principal del plugin
@@ -294,9 +294,9 @@ class Plugin {
 	 */
 	public function init_logger(): ?Logger {
 		if ( ! $this->logger ) {
-			$logger       = function_exists( '\Bloom_UX\WPDB_Monolog\get_logger_for_channel' ) ? get_logger_for_channel( 'bloom_forms' ) : null;
+			$logger       = function_exists( '\bloom\WPDB_Monolog\get_logger_for_channel' ) ? get_logger_for_channel( 'bloom_forms' ) : null;
 			$this->logger = $logger;
-			set_channel_level( $logger, Level::Debug );
+			set_channel_level( $logger, Logger::DEBUG );
 		}
 		return $this->logger;
 	}

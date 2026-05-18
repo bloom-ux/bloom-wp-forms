@@ -50,14 +50,16 @@ class Entries_Repository {
 	 * @return int|null ID de la entrada creada o null si falla
 	 */
 	public function create( string $form, array $data, array $meta = array() ): ?int {
+		$entry_data = array(
+			'form'         => $form,
+			'submitted_on' => wp_date( 'Y-m-d H:i:s.v' ),
+			'form_data'    => wp_json_encode( $data ),
+			'meta'         => wp_json_encode( (object) $meta ),
+		);
+		$entry_data = apply_filters( 'bloom_forms_create_entry_data', $entry_data, $form );
 		$insert = $this->wpdb->insert(
 			$this->wpdb->bloom_forms_entries,
-			array(
-				'form'         => $form,
-				'submitted_on' => wp_date( 'Y-m-d H:i:s.v' ),
-				'form_data'    => wp_json_encode( $data ),
-				'meta'         => wp_json_encode( (object) $meta ),
-			),
+			$entry_data,
 			'%s'
 		);
 		if ( ! $insert ) {

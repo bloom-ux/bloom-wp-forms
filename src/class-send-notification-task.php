@@ -11,7 +11,9 @@ class Send_Notification_Task extends WP_Async_Request {
 		$notification_id = (int) filter_input( INPUT_POST, 'notification_id', FILTER_SANITIZE_NUMBER_INT );
 		$notification    = Notification::get( $notification_id );
 		if ( ! $notification ) {
-			Plugin::get_instance()->get_logger()->error( 'No se encontró la notificación con ID: ' . $notification_id );
+			if ( Plugin::get_instance()->get_logger() ) {
+				Plugin::get_instance()->get_logger()->error( 'No se encontró la notificación con ID: ' . $notification_id );
+			}
 		}
 		$email   = $notification->get_email();
 		$subject = $notification->get_subject();

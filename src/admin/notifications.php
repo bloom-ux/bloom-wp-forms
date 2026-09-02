@@ -31,11 +31,11 @@ $next_page_url     = add_query_arg( array( 'paged' => $current_page + 1 ), admin
 $last_page_url     = add_query_arg( array( 'paged' => $total_pages ), admin_url( 'admin.php?page=bloom_forms_notifications_admin' ) );
 ?>
 <div class="wrap">
-	<h1>Notificaciones</h1>
+	<h1><?php echo esc_html__( 'Notificaciones', 'bloom-wp-forms' ); ?></h1>
 	<ul class="subsubsub">
 		<li>
 			<a <?php if ( ! sanitize_text_field( filter_input( INPUT_GET, 'status' ) ) ) : ?>
-				class="current" aria-current="page"<?php endif; ?> href="<?php echo esc_url( $all_link ); ?>">Todo
+				class="current" aria-current="page"<?php endif; ?> href="<?php echo esc_url( $all_link ); ?>"><?php echo esc_html__( 'Todo', 'bloom-wp-forms' ); ?>
 			<?php if ( ! empty( $counts['all'] ) ) : ?>
 			<span class="count">(<?php echo esc_html( $counts['all'] ); ?>)</span>
 			<?php endif; ?>
@@ -44,50 +44,50 @@ $last_page_url     = add_query_arg( array( 'paged' => $total_pages ), admin_url(
 		<?php if ( ! empty( $counts['scheduled'] ) ) : ?>
 		<li>
 			<a <?php if ( 'scheduled' === sanitize_text_field( filter_input( INPUT_GET, 'status' ) ) ) : ?>
-				class="current" aria-current="page"<?php endif; ?> href="<?php echo esc_url( $pending_link ); ?>"> Pendientes
+				class="current" aria-current="page"<?php endif; ?> href="<?php echo esc_url( $pending_link ); ?>"> <?php echo esc_html__( 'Pendientes', 'bloom-wp-forms' ); ?>
 			<span class="count">(<?php echo esc_html( $counts['scheduled'] ); ?>)</span></a> |
 		</li>
 		<?php endif; ?>
 		<?php if ( ! empty( $counts['send_error'] ) ) : ?>
 		<li>
 			<a <?php if ( 'send_error' === sanitize_text_field( filter_input( INPUT_GET, 'status' ) ) ) : ?>
-				class="current" aria-current="page"<?php endif; ?> href="<?php echo esc_url( $failed_link ); ?>"> Con errores
+				class="current" aria-current="page"<?php endif; ?> href="<?php echo esc_url( $failed_link ); ?>"> <?php echo esc_html__( 'Con errores', 'bloom-wp-forms' ); ?>
 			<span class="count">(<?php echo esc_html( $counts['send_error'] ); ?>)</span></a> |
 		</li>
 		<?php endif; ?>
 		<?php if ( ! empty( $counts['send_success'] ) ) : ?>
 		<li>
 			<a <?php if ( 'send_success' === sanitize_text_field( filter_input( INPUT_GET, 'status' ) ) ) : ?>
-				class="current" aria-current="page"<?php endif; ?> href="<?php echo esc_url( $sent_link ); ?>"> Enviadas
+				class="current" aria-current="page"<?php endif; ?> href="<?php echo esc_url( $sent_link ); ?>"> <?php echo esc_html__( 'Enviadas', 'bloom-wp-forms' ); ?>
 			<span class="count">(<?php echo esc_html( $counts['send_success'] ); ?>)</span></a>
 		</li>
 		<?php endif; ?>
 	</ul>
 	<div class="tablenav-pages alignright">
-		<span class="displaying-num"><?php echo esc_html( $total_entries ); ?> notificaciones</span>
+		<span class="displaying-num"><?php echo esc_html( sprintf( /* translators: %s: número de notificaciones. */ __( '%s notificaciones', 'bloom-wp-forms' ), $total_entries ) ); ?></span>
 		<span class="pagination-links">
 			<?php if ( $current_page > 1 ) : ?>
 			<a class="first-page button" href="<?php echo esc_url( $first_page_url ); ?>">
-				<span class="screen-reader-text">Primera página</span><span aria-hidden="true">«</span>
+				<span class="screen-reader-text"><?php echo esc_html__( 'Primera página', 'bloom-wp-forms' ); ?></span><span aria-hidden="true">«</span>
 			</a>
 			<a class="prev-page button" href="<?php echo esc_url( $previous_page_url ); ?>">
-				<span class="screen-reader-text">Página anterior</span><span aria-hidden="true">‹</span>
+				<span class="screen-reader-text"><?php echo esc_html__( 'Página anterior', 'bloom-wp-forms' ); ?></span><span aria-hidden="true">‹</span>
 			</a>
 			<?php else : ?>
 			<span class="tablenav-pages-navspan button disabled" aria-hidden="true">«</span>
 			<span class="tablenav-pages-navspan button disabled" aria-hidden="true">‹</span>
 			<?php endif; ?>
 			<span class="paging-input">
-				<label for="current-page-selector" class="screen-reader-text">Página actual</label>
+				<label for="current-page-selector" class="screen-reader-text"><?php echo esc_html__( 'Página actual', 'bloom-wp-forms' ); ?></label>
 				<input class="current-page" id="current-page-selector" type="text" name="paged" value="<?php echo esc_attr( $current_page ); ?>" size="2" aria-describedby="table-paging">
-				<span class="tablenav-paging-text"> de <span class="total-pages"><?php echo esc_attr( $total_pages ); ?></span></span>
+				<span class="tablenav-paging-text"> <?php echo esc_html__( 'de', 'bloom-wp-forms' ); ?> <span class="total-pages"><?php echo esc_attr( $total_pages ); ?></span></span>
 			</span>
 			<?php if ( $current_page < $total_pages ) : ?>
 			<a class="next-page button" href="<?php echo esc_url( $next_page_url ); ?>">
-				<span class="screen-reader-text">Página siguiente</span><span aria-hidden="true">›</span>
+				<span class="screen-reader-text"><?php echo esc_html__( 'Página siguiente', 'bloom-wp-forms' ); ?></span><span aria-hidden="true">›</span>
 			</a>
 			<a class="last-page button" href="<?php echo esc_url( $last_page_url ); ?>">
-				<span class="screen-reader-text">Última página</span><span aria-hidden="true">»</span></a>
+				<span class="screen-reader-text"><?php echo esc_html__( 'Última página', 'bloom-wp-forms' ); ?></span><span aria-hidden="true">»</span></a>
 			</span>
 			<?php else : ?>
 			<span class="tablenav-pages-navspan button disabled" aria-hidden="true">›</span>

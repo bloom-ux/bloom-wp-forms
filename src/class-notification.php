@@ -426,9 +426,9 @@ class Notification {
 	 */
 	public static function get_status_labels(): array {
 		$labels = array(
-			'scheduled'    => 'Envío programado',
-			'send_error'   => 'Error al enviar',
-			'send_success' => 'Enviado correctamente',
+			'scheduled'    => __( 'Envío programado', 'bloom-wp-forms' ),
+			'send_error'   => __( 'Error al enviar', 'bloom-wp-forms' ),
+			'send_success' => __( 'Enviado correctamente', 'bloom-wp-forms' ),
 		);
 		return $labels;
 	}

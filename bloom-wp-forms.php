@@ -3,10 +3,12 @@
  * Plugin Name: Bloom Forms
  * Plugin URI: https://github.com/bloom-ux/bloom-wp-forms/
  * Description: Custom forms scaffolding for WordPress
- * Version: 0.1.0
+ * Version: 0.2.0
  * Author: bloom.lat
  * Author URI: https://www.bloom.lat/
  * License: GPL-3.0-or-later
+ * Text Domain: bloom-wp-forms
+ * Domain Path: /languages
  *
  * @package Bloom_UX\WP_Forms
  */
@@ -19,3 +21,4 @@ if ( is_readable( __DIR__ . '/vendor/autoload.php' ) ) {
 
 $bloom_forms = Plugin::get_instance();
 register_activation_hook( __FILE__, array( $bloom_forms, 'activation_hook' ) );
+register_deactivation_hook( __FILE__, array( $bloom_forms, 'deactivation_hook' ) );

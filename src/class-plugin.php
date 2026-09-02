@@ -11,7 +11,6 @@ use WP_CLI;
 use Monolog\Level;
 use Monolog\Logger;
 use Queulat\Singleton;
-use Queulat\Validator;
 use Queulat\Helpers\Webpack_Asset_Loader;
 use WP_Role;
 
@@ -27,7 +26,7 @@ class Plugin {
 
 	use Singleton;
 
-	const VERSION                              = '0.1.0';
+	const VERSION                              = '0.2.0';
 	const INSTALLER_VERSION_OPT_NAME           = 'bloom_forms_version';
 	const ENTRIES_TABLE_NAME                   = 'bloom_forms_entries';
 	const NOTIFICATIONS_TABLE_NAME             = 'bloom_forms_notifications';
@@ -53,6 +52,13 @@ class Plugin {
 	 * @var Notifications_Admin
 	 */
 	public $notifications_admin;
+
+	/**
+	 * Pantalla de administración de ajustes
+	 *
+	 * @var Settings_Admin
+	 */
+	public $settings_admin;
 
 	/**
 	 * Servicio de log
@@ -125,10 +131,20 @@ class Plugin {
 	public function init() {
 		add_action( 'init', array( $this, 'maybe_process_form' ) );
 		add_action( 'init', array( $this, 'maybe_resend_notification' ) );
+		add_action( 'init', array( $this, 'load_translations' ) );
 		add_action( 'bloom_forms__retry_scheduled', array( $this, 'retry_scheduled' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
 		add_action( 'init', array( $this, 'maybe_admin_redirect' ) );
 		add_action( 'switch_blog', array( $this, 'switched_blog' ) );
+	}
+
+	/**
+	 * Cargar traducciones del plugin
+	 *
+	 * @return void
+	 */
+	public function load_translations() {
+		load_plugin_textdomain( 'bloom-wp-forms', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 	}
 
 	/**
@@ -182,12 +198,14 @@ class Plugin {
 	 * @return void
 	 */
 	public function admin_enqueue_scripts() {
-		if ( get_current_screen()->id !== 'toplevel_page_bloom_forms_entries_admin' ) {
+		if ( ! function_exists( 'get_current_screen' ) || ! get_current_screen() ) {
+			return;
+		}
+		if ( 'toplevel_page_bloom_forms_entries_admin' !== get_current_screen()->id ) {
 			return;
 		}
 		$this->asset_loader->enqueue_style( 'backend-styles.css' );
-		// $this->asset_loader->enqueue_script( 'backend-scripts.js', array( 'jquery' ) );
-		wp_enqueue_script( 'htmx.org', 'https://cdn.jsdelivr.net/npm/htmx.org@1.9.10/dist/htmx.min.js', array(), '1.9.10', array( 'strategy' => 'defer' ) );
+		wp_enqueue_script( 'htmx.org', plugins_url( 'assets/js/htmx.min.js', dirname( __DIR__ ) . '/bloom-wp-forms.php' ), array(), '1.9.10', array( 'strategy' => 'defer' ) );
 	}
 
 	/**
@@ -228,11 +246,11 @@ class Plugin {
 			return;
 		}
 		if ( ! wp_verify_nonce( sanitize_text_field( filter_input( INPUT_GET, '_wpnonce' ) ), 'bloom_forms__resend_notification--' . $notification_id ) ) {
-			wp_die( 'No tienes autorización para hacer eso' );
+			wp_die( esc_html__( 'No tienes autorización para hacer eso', 'bloom-wp-forms' ) );
 		}
 		$notification = Notification::get( $notification_id );
 		if ( ! $notification ) {
-			wp_die( 'No existe la notificación indicada' );
+			wp_die( esc_html__( 'No existe la notificación indicada', 'bloom-wp-forms' ) );
 		}
 		$notification->send();
 		$referer  = wp_get_referer();
@@ -296,7 +314,9 @@ class Plugin {
 		if ( ! $this->logger ) {
 			$logger       = function_exists( '\Bloom_UX\WPDB_Monolog\get_logger_for_channel' ) ? get_logger_for_channel( 'bloom_forms' ) : null;
 			$this->logger = $logger;
-			set_channel_level( $logger, Level::Debug );
+			if ( $logger && function_exists( '\Bloom_UX\WPDB_Monolog\set_channel_level' ) ) {
+				set_channel_level( $logger, Level::Debug );
+			}
 		}
 		return $this->logger;
 	}
@@ -323,6 +343,10 @@ class Plugin {
 		// Notificaciones por envío.
 		$this->notifications_admin = new Notifications_Admin();
 		$this->notifications_admin->init();
+
+		// Ajustes.
+		$this->settings_admin = new Settings_Admin();
+		$this->settings_admin->init();
 	}
 
 	/**
@@ -349,6 +373,21 @@ class Plugin {
 		} else {
 			$this->activate_for_blog();
 		}
+	}
+
+	/**
+	 * Desactivación del plugin
+	 *
+	 * Retirar la capacidad otorgada en la activación y cancelar la tarea programada de reintentos
+	 *
+	 * @return void
+	 */
+	public function deactivation_hook() {
+		$admin = get_role( 'administrator' );
+		if ( $admin instanceof WP_Role ) {
+			$admin->remove_cap( static::DEFAULT_READ_CAPABILITY );
+		}
+		wp_clear_scheduled_hook( 'bloom_forms__retry_scheduled' );
 	}
 
 	/**
@@ -458,26 +497,6 @@ class Plugin {
 	}
 
 	/**
-	 * Obtener errores de validación
-	 *
-	 * @param Form  $form Instancia de formulario.
-	 * @param array $values Valores enviados.
-	 * @return array Mensajes de error de validación indexados por name del campo
-	 */
-	private function get_validation_errors( Form $form, $values ) {
-		if ( empty( $values ) ) {
-			return;
-		}
-		$validation = new Validator(
-			$values,
-			$form->get_validation_rules()
-		);
-		$is_valid   = $validation->is_valid();
-		$errors     = $validation->get_error_messages();
-		return $errors;
-	}
-
-	/**
 	 * Obtener tamaño de archivo en formato legible
 	 *
 	 * @param int $bytes Tamaño en bytes.
@@ -519,15 +538,17 @@ class Plugin {
 			"bloom_forms_{$form->get_slug()}__submit"
 		);
 		if ( ! $passes_nonce ) {
-			$this->logger->notice(
-				'Error de validación de nonce en envío de formulario ({formname})',
-				array(
-					'formname' => $form->get_slug(),
-					'_post'    => wp_unslash( $_POST ),
-					'_server'  => wp_unslash( $_SERVER ),
-				)
-			);
-			wp_die( 'No es posible procesar el formulario. Por favor recarga la página e intenta nuevamente.' );
+			if ( $this->logger ) {
+				$this->logger->notice(
+					'Error de validación de nonce en envío de formulario ({formname})',
+					array(
+						'formname' => $form->get_slug(),
+						'_post'    => wp_unslash( $_POST ),
+						'_server'  => wp_unslash( $_SERVER ),
+					)
+				);
+			}
+			wp_die( esc_html__( 'No es posible procesar el formulario. Por favor recarga la página e intenta nuevamente.', 'bloom-wp-forms' ) );
 		}
 
 		$postdata = wp_unslash( $_POST );
@@ -544,23 +565,25 @@ class Plugin {
 				)
 			);
 			if ( ! empty( $wp_upload['error'] ) ) {
-				$this->logger->error(
-					'Error al subir archivo {filename}',
-					array(
-						'file_key'      => $key,
-						'filename'      => $uploaded_file['name'],
-						'uploaded_file' => $uploaded_file,
-						'error'         => $wp_upload,
-					)
-				);
-				wp_die( wp_kses_post( "{$wp_upload['error']} <b>Archivo: {$uploaded_file['name']}</b>" ) );
+				if ( $this->logger ) {
+					$this->logger->error(
+						'Error al subir archivo {filename}',
+						array(
+							'file_key'      => $key,
+							'filename'      => $uploaded_file['name'],
+							'uploaded_file' => $uploaded_file,
+							'error'         => $wp_upload,
+						)
+					);
+				}
+				wp_die( wp_kses_post( "{$wp_upload['error']} <b>" . esc_html__( 'Archivo:', 'bloom-wp-forms' ) . " {$uploaded_file['name']}</b>" ) );
 			}
 
 			$postdata[ $key ] = $this->process_upload( $wp_upload );
 		}
 
 		$values          = $form->sanitize_data( $postdata );
-		$validate_errors = $this->get_validation_errors( $form, $values );
+		$validate_errors = $form->get_validation_errors( $values );
 
 		if ( ! empty( $validate_errors ) ) {
 			// Continúa ejecución de render para mostrar errores a usuario.
@@ -573,23 +596,27 @@ class Plugin {
 			$values
 		);
 		if ( ! $created ) {
-			$this->logger->error(
-				'Error al guardar datos de formulario ({$form})',
+			if ( $this->logger ) {
+				$this->logger->error(
+					'Error al guardar datos de formulario ({$form})',
+					array(
+						'form'   => $form->get_slug(),
+						'values' => $values,
+					)
+				);
+			}
+			wp_die( esc_html__( 'Error al guardar datos del formulario', 'bloom-wp-forms' ) );
+		}
+
+		if ( $this->logger ) {
+			$this->logger->info(
+				'Datos del formulario guardados correctamente ({form})',
 				array(
 					'form'   => $form->get_slug(),
 					'values' => $values,
 				)
 			);
-			wp_die( 'Error al guardar datos del formulario' );
 		}
-
-		$this->logger->info(
-			'Datos del formulario guardados correctamente ({form})',
-			array(
-				'form'   => $form->get_slug(),
-				'values' => $values,
-			)
-		);
 
 		/**
 		 * Utilizar esta acción para disparar notificaciones u otros eventos asociados a un envío

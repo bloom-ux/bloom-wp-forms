@@ -16,6 +16,7 @@
         "php": ">=8.2",
         "composer/installers": "^2",
         "deliciousbrains/wp-background-processing": "^1.3",
+        "bloom-ux/queulat": "dev-0.2.0-alpha",
         "bloom-ux/wpdb-monolog": "dev-php8"
     },
     "require-dev": {

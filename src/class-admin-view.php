@@ -28,11 +28,11 @@ class Admin_View extends Form_View {
 		$out  = '<div class="container" style="font-size:1rem;line-height:1.25;">';
 		$out .= '<h1 style="font-weight:700;margin:1rem 0;font-size:1.75rem;">' . esc_html( $this->form->get_property( 'title' ) ) . '</h1>';
 		if ( 'created-success' === filter_input( INPUT_GET, 'status' ) ) :
-			$out .= '<div class="notice notice-success"><p>El envío se ha creado correctamente</p></div>';
+			$out .= '<div class="notice notice-success"><p>' . esc_html__( 'El envío se ha creado correctamente', 'bloom-wp-forms' ) . '</p></div>';
 		elseif ( 'resend-success' === filter_input( INPUT_GET, 'status' ) ) :
-			$out .= '<div class="notice notice-success"><p>La notificación se ha reenviado correctamente</p></div>';
+			$out .= '<div class="notice notice-success"><p>' . esc_html__( 'La notificación se ha reenviado correctamente', 'bloom-wp-forms' ) . '</p></div>';
 		elseif ( 'edit-entry-success' === filter_input( INPUT_GET, 'status' ) ) :
-			$out .= '<div class="notice notice-success"><p>Entrada editada correctamente</p></div>';
+			$out .= '<div class="notice notice-success"><p>' . esc_html__( 'Entrada editada correctamente', 'bloom-wp-forms' ) . '</p></div>';
 		endif;
 		$out .= '<div class="description" style="text-transform:uppercase;margin:1.5rem 0;opacity:.75;font-weight:500">';
 		$out .= '#' . esc_html( filter_input( INPUT_GET, 'entry_id', FILTER_SANITIZE_NUMBER_INT ) ) . ' / ' . esc_html( wp_date( 'd F Y - H:i:s', $this->form->get_property( 'submitted_date' )->format( 'U' ) ) );
@@ -78,62 +78,5 @@ class Admin_View extends Form_View {
 		}
 		$out .= '</div>';
 		return $out;
-	}
-
-	/**
-	 * Construir output para elementos input radio
-	 *
-	 * @param Custom_Radio $element Elemento input radio.
-	 * @return string Visualización de opción seleccionada
-	 */
-	public function custom_radio_output( Custom_Radio $element ): string {
-		$value      = json_decode( $element->get_value() );
-		$json_error = json_last_error();
-		if ( $json_error ) {
-			$value = (array) $element->get_value();
-			if ( ! $value ) {
-				return '&mdash;';
-			}
-		}
-		$element_options = $element->get_options();
-		$is_associative  = \Minwork\Helper\Arr::isAssoc( $element_options );
-		if ( $is_associative ) {
-			$value = array_intersect_key( $element_options, array_combine( $value, $value ) );
-		}
-		return '<div>' . implode( '<br>', array_map( 'esc_html', (array) $value ) ) . '</div>';
-	}
-
-	/**
-	 * Construir output para elementos checkbox o radio
-	 *
-	 * @param Custom_Checkbox $element Elemento del formulario.
-	 * @return string Output HTML
-	 */
-	public function custom_checkbox_output( Custom_Checkbox $element ): string {
-		$value = $element->get_value();
-		if ( ! $value ) {
-			return '&mdash;';
-		}
-		$element_options = $element->get_options();
-		$is_associative  = \Minwork\Helper\Arr::isAssoc( $element_options );
-		if ( $is_associative ) {
-			$value = array_intersect_key( $element_options, array_combine( $value, $value ) );
-		}
-		return '<div>' . implode( '<br>', array_map( 'esc_html', $value ) ) . '</div>';
-	}
-
-	/**
-	 * Construir output para elementos de subida de archivos
-	 *
-	 * @param Custom_Upload $element Elemento de subida de archivo.
-	 * @return string Link al archivo subido
-	 */
-	public function custom_upload_output( $element ): string {
-		$value = $element->get_value();
-		if ( ! $value ) {
-			return '';
-		}
-		$url = $value->url;
-		return '<div><a href="' . esc_url( $url ) . '" target="_blank" rel="noreferer noopener">' . esc_html( basename( $url ) ) . '</a> ' . Plugin::get_instance()->human_filesize( $value->size, 2 ) . '</div>';
 	}
 }

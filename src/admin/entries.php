@@ -20,15 +20,8 @@ $now = new DateTimeImmutable( 'now', wp_timezone() );
 
 //phpcs:disable WordPress.Security.NonceVerification.Recommended
 if ( ! empty( $_GET['action'] ) ) :
-	if ( 'bloom_forms_admin__create' === filter_input( INPUT_GET, 'action' ) ) :
-		require __DIR__ . '/entry-new.php';
-		return;
-	elseif ( 'bloom_forms_admin__view' === filter_input( INPUT_GET, 'action' ) && ! empty( $_GET['entry_id'] ) ) :
+	if ( 'bloom_forms_admin__view' === filter_input( INPUT_GET, 'action' ) && ! empty( $_GET['entry_id'] ) ) :
 		require __DIR__ . '/entry-detail.php';
-		return;
-	elseif ( 'bloom_forms_admin__edit' === filter_input( INPUT_GET, 'action' ) && ! empty( $_GET['entry_id'] ) ) :
-		$entry = Entries_Repository::get_instance()->find_by_id( filter_input( INPUT_GET, 'entry_id', FILTER_SANITIZE_NUMBER_INT ) );
-		require __DIR__ . '/entry-new.php';
 		return;
 	endif;
 endif;
@@ -36,7 +29,7 @@ endif;
 
 ?>
 <div class="wrap" id="bloom-forms-admin-main">
-	<h1 id="bloom-forms-admin-title" class="bloom-forms-admin__title">Envíos de formularios</h1>
+	<h1 id="bloom-forms-admin-title" class="bloom-forms-admin__title"><?php echo esc_html__( 'Envíos de formularios', 'bloom-wp-forms' ); ?></h1>
 	<div class="tablenav top">
 		<div id="bloom-forms-admin-filter" class="alignleft actions bulkactions" hx-preserve>
 			<form
@@ -48,9 +41,9 @@ endif;
 				hx-target="#bloom-forms-admin-main"
 				hx-indicator="#bloom-forms-admin-title"
 			>
-				<label for="form_slug" class="screen-reader-text">Filtrar por formulario</label>
+				<label for="form_slug" class="screen-reader-text"><?php echo esc_html__( 'Filtrar por formulario', 'bloom-wp-forms' ); ?></label>
 				<select name="form_slug" id="bloom_forms-form-slug">
-					<option value="">Filtrar por formulario</option>
+					<option value=""><?php echo esc_html__( 'Filtrar por formulario', 'bloom-wp-forms' ); ?></option>
 					<?php foreach ( Plugin::get_instance()->get_registered_forms_slugs() as $form_slug ) : ?>
 						<option value="<?php echo esc_attr( $form_slug ); ?>" <?php echo sanitize_key( filter_input( INPUT_GET, 'form_slug' ) ) === $form_slug ? ' selected="selected"' : ''; ?>>
 							<?php echo esc_html( Plugin::get_instance()->get_form( $form_slug )->get_title() ); ?>
@@ -58,9 +51,9 @@ endif;
 					<?php endforeach; ?>
 				</select>
 				<input type="hidden" name="page" value="bloom_forms_entries_admin">
-				<input type="text" name="search" size="35" placeholder="Buscar por cualquier dato del formulario" value="<?php echo esc_attr( filter_input( INPUT_GET, 'search' ) ); ?>">
+				<input type="text" name="search" size="35" placeholder="<?php echo esc_attr__( 'Buscar por cualquier dato del formulario', 'bloom-wp-forms' ); ?>" value="<?php echo esc_attr( filter_input( INPUT_GET, 'search' ) ); ?>">
 				<button type="submit" class="button">
-					Buscar
+					<?php echo esc_html__( 'Buscar', 'bloom-wp-forms' ); ?>
 				</button>
 			</form>
 		</div>
@@ -73,30 +66,30 @@ endif;
 			hx-swap="outerHTML"
 			hx-indicator="#bloom-forms-admin-title"
 		>
-			<span class="displaying-num"><?php echo esc_html( $total_entries ); ?> envíos</span>
+			<span class="displaying-num"><?php echo esc_html( sprintf( /* translators: %s: número de envíos. */ __( '%s envíos', 'bloom-wp-forms' ), $total_entries ) ); ?></span>
 			<span class="pagination-links">
 				<?php if ( $current_page > 1 ) : ?>
 				<a class="first-page button" href="<?php echo esc_url( $first_page_url ); ?>">
-					<span class="screen-reader-text">Primera página</span><span aria-hidden="true">«</span>
+					<span class="screen-reader-text"><?php echo esc_html__( 'Primera página', 'bloom-wp-forms' ); ?></span><span aria-hidden="true">«</span>
 				</a>
 				<a class="prev-page button" href="<?php echo esc_url( $previous_page_url ); ?>">
-					<span class="screen-reader-text">Página anterior</span><span aria-hidden="true">‹</span>
+					<span class="screen-reader-text"><?php echo esc_html__( 'Página anterior', 'bloom-wp-forms' ); ?></span><span aria-hidden="true">‹</span>
 				</a>
 				<?php else : ?>
 				<span class="tablenav-pages-navspan button disabled" aria-hidden="true">«</span>
 				<span class="tablenav-pages-navspan button disabled" aria-hidden="true">‹</span>
 				<?php endif; ?>
 				<span class="paging-input">
-					<label for="current-page-selector" class="screen-reader-text">Página actual</label>
+					<label for="current-page-selector" class="screen-reader-text"><?php echo esc_html__( 'Página actual', 'bloom-wp-forms' ); ?></label>
 					<input form="bloom-forms-admin-filter-form" class="current-page" id="current-page-selector" type="text" name="paged" value="<?php echo esc_attr( $current_page ); ?>" size="2" aria-describedby="table-paging">
-					<span class="tablenav-paging-text"> de <span class="total-pages"><?php echo esc_attr( $total_pages ); ?></span></span>
+					<span class="tablenav-paging-text"> <?php echo esc_html__( 'de', 'bloom-wp-forms' ); ?> <span class="total-pages"><?php echo esc_attr( $total_pages ); ?></span></span>
 				</span>
 				<?php if ( $current_page < $total_pages ) : ?>
 				<a class="next-page button" href="<?php echo esc_url( $next_page_url ); ?>">
-					<span class="screen-reader-text">Página siguiente</span><span aria-hidden="true">›</span>
+					<span class="screen-reader-text"><?php echo esc_html__( 'Página siguiente', 'bloom-wp-forms' ); ?></span><span aria-hidden="true">›</span>
 				</a>
 				<a class="last-page button" href="<?php echo esc_url( $last_page_url ); ?>">
-					<span class="screen-reader-text">Última página</span><span aria-hidden="true">»</span></a>
+					<span class="screen-reader-text"><?php echo esc_html__( 'Última página', 'bloom-wp-forms' ); ?></span><span aria-hidden="true">»</span></a>
 				</span>
 				<?php else : ?>
 				<span class="tablenav-pages-navspan button disabled" aria-hidden="true">›</span>
@@ -108,7 +101,7 @@ endif;
 		<thead>
 			<tr>
 				<?php foreach ( $table_columns as $key => $val ) : ?>
-					<th scope="col" class="bloom-forms-admin__th <?php echo esc_attr( "bloom-forms-admin__th--{$key}" ); ?>"><?php echo esc_html( $val ); ?></th>
+					<th scope="col" class="bloom-forms-admin__th <?php echo esc_attr( "bloom-forms-admin__th--{$key}" ); ?>"<?php echo 'id' === $key ? ' style="width:4rem"' : ''; ?>><?php echo esc_html( $val ); ?></th>
 				<?php endforeach; ?>
 			</tr>
 		</thead>
@@ -119,16 +112,15 @@ endif;
 					<?php foreach ( $table_columns as $key => $val ) : ?>
 						<td class="bloom-form-admin__cell <?php echo esc_attr( "bloom-form-admin__cell--{$key}" ); ?>">
 							<?php do_action( 'bloom_forms_admin_entries_cell', $entry, $key, $val ); ?>
-						</td>
-					<?php endforeach; ?>
 					</td>
+				<?php endforeach; ?>
 				</tr>
 			<?php endforeach; ?>
 		<?php else : ?>
 			<tr>
 				<td colspan="7">
 					<div style="margin:2rem;padding:1rem;text-align:center">
-						<p>No existen resultados para esta búsqueda/filtro.</p>
+						<p><?php echo esc_html__( 'No existen resultados para esta búsqueda/filtro.', 'bloom-wp-forms' ); ?></p>
 					</div>
 				</td>
 			</tr>

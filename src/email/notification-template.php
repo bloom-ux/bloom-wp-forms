@@ -15,7 +15,7 @@ namespace Bloom_UX\WP_Forms;
 
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html lang="es">
+<html lang="<?php echo esc_attr( get_bloginfo( 'language' ) ); ?>">
 <head>
 	<!--[if gte mso 15]>
 		<xml>

@@ -11,7 +11,7 @@ class Notifications_Admin extends Abstract_Admin {
 	}
 
 	public function get_title(): string {
-		return 'Notificaciones';
+		return __( 'Notificaciones', 'bloom-wp-forms' );
 	}
 
 	public function get_menu_title(): string {

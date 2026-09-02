@@ -22,26 +22,15 @@ foreach ( $entry->get_form()->get_fields() as $field ) {
 	}
 	$theform->append_child( $field );
 }
-
-// @todo No implementado de momento pero se podría habilitar (quizás más elegantemente como método de la clase).
-$entry_edit_link = add_query_arg(
-	array(
-		'page'     => 'bloom_forms_entries_admin',
-		'action'   => 'bloom_forms_admin__edit',
-		'new_form' => $entry->get_form()->get_slug(),
-		'entry_id' => $entry->get_id(),
-	),
-	admin_url( 'admin.php' )
-);
 ?>
 
 <div class="wrap">
-	<p style="font-size:23px;line-height:1.3;color:#1d2327;margin:9px 0 1rem;">Envíos de formularios</p>
-	<div><a href="<?php echo esc_url( admin_url( 'admin.php?page=bloom_forms_entries_admin' ) ); ?>">&lsaquo; Volver a listado de envíos</a></div>
+	<p style="font-size:23px;line-height:1.3;color:#1d2327;margin:9px 0 1rem;"><?php echo esc_html__( 'Envíos de formularios', 'bloom-wp-forms' ); ?></p>
+	<div><a href="<?php echo esc_url( admin_url( 'admin.php?page=bloom_forms_entries_admin' ) ); ?>">&lsaquo; <?php echo esc_html__( 'Volver a listado de envíos', 'bloom-wp-forms' ); ?></a></div>
 	<div class="bloom-forms-entry">
 		<div class="bloom-forms-entry__data">
 			<?php echo $theform; //phpcs:ignore ?>
-			<h2 style="font-size:1.3rem;margin: calc( 1em + 1rem ) 0;">Notificaciones</h2>
+			<h2 style="font-size:1.3rem;margin: calc( 1em + 1rem ) 0;"><?php echo esc_html__( 'Notificaciones', 'bloom-wp-forms' ); ?></h2>
 			<?php
 				$notifications = $entry->get_notifications();
 				require __DIR__ . '/notifications-table.php';

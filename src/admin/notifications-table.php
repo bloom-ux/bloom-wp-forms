@@ -12,12 +12,12 @@ use Bloom_UX\WP_Forms\Plugin;
 <table class="widefat striped" style="margin-top:1rem;">
 	<thead>
 		<tr>
-			<th scope="col">ID</th>
-			<th scope="col">Formulario</th>
-			<th scope="col">Solicitante</th>
-			<th scope="col">Destinatario</th>
-			<th scope="col">Fecha</th>
-			<th scope="col">Status</th>
+			<th scope="col"><?php echo esc_html__( 'ID', 'bloom-wp-forms' ); ?></th>
+			<th scope="col"><?php echo esc_html__( 'Formulario', 'bloom-wp-forms' ); ?></th>
+			<th scope="col"><?php echo esc_html__( 'Solicitante', 'bloom-wp-forms' ); ?></th>
+			<th scope="col"><?php echo esc_html__( 'Destinatario', 'bloom-wp-forms' ); ?></th>
+			<th scope="col"><?php echo esc_html__( 'Fecha', 'bloom-wp-forms' ); ?></th>
+			<th scope="col"><?php echo esc_html__( 'Status', 'bloom-wp-forms' ); ?></th>
 		</tr>
 	</thead>
 	<tbody>
@@ -44,14 +44,14 @@ use Bloom_UX\WP_Forms\Plugin;
 				<td>
 					<?php echo esc_html( $n->get_last_status_label() ); ?>
 					<?php if ( $n->get_last_status() === 'send_error' ) : ?>
-					- <a href="<?php echo esc_url( Plugin::get_instance()->get_resend_url( $n ) ); ?>">Reenviar</a>
+					- <a href="<?php echo esc_url( Plugin::get_instance()->get_resend_url( $n ) ); ?>"><?php echo esc_html__( 'Reenviar', 'bloom-wp-forms' ); ?></a>
 					<?php endif; ?>
 				</td>
 			</tr>
 		<?php endforeach; ?>
 	<?php else : ?>
 		<tr>
-			<td colspan="6" style="padding:5rem 0;text-align:center;">No hay notificaciones</td>
+			<td colspan="6" style="padding:5rem 0;text-align:center;"><?php echo esc_html__( 'No hay notificaciones', 'bloom-wp-forms' ); ?></td>
 		</tr>
 	<?php endif; ?>
 	</tbody>

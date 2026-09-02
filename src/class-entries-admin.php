@@ -11,7 +11,6 @@ use DateTime;
 use DateInterval;
 use DateTimeImmutable;
 use Queulat\Helpers\Abstract_Admin;
-use Box\Spout\Writer\Common\Creator\WriterEntityFactory;
 
 /**
  * Administración de envíos de formularios
@@ -61,7 +60,7 @@ class Entries_Admin extends Abstract_Admin {
 	 * @return string Título de la página de administración
 	 */
 	public function get_title(): string {
-		return 'Envíos de formulario';
+		return __( 'Envíos de formulario', 'bloom-wp-forms' );
 	}
 
 	/**
@@ -70,7 +69,7 @@ class Entries_Admin extends Abstract_Admin {
 	 * @return string Título del menú de administración
 	 */
 	public function get_menu_title(): string {
-		return 'Formularios';
+		return __( 'Formularios', 'bloom-wp-forms' );
 	}
 
 	/**
@@ -149,10 +148,10 @@ class Entries_Admin extends Abstract_Admin {
 		$last_page_url     = add_query_arg( array( 'paged' => $total_pages ), $base_url );
 		$month_options     = $this->get_month_options();
 		$table_columns     = array(
-			'id'            => 'ID',
-			'form'          => 'Formulario',
-			'date'          => 'Fecha de recepción',
-			'notifications' => 'Notificaciones',
+			'id'            => __( 'ID', 'bloom-wp-forms' ),
+			'form'          => __( 'Formulario', 'bloom-wp-forms' ),
+			'date'          => __( 'Fecha de recepción', 'bloom-wp-forms' ),
+			'notifications' => __( 'Notificaciones', 'bloom-wp-forms' ),
 		);
 		require __DIR__ . '/admin/entries.php';
 	}
@@ -173,12 +172,15 @@ class Entries_Admin extends Abstract_Admin {
 				echo '</a>';
 				break;
 			case 'form':
+				echo '<a href="' . esc_url( $entry->get_admin_link() ) . '">';
 				echo esc_html( $entry->get_form()->get_title() );
+				echo '</a>';
 				break;
 			case 'date':
 				echo esc_html( wp_date( 'j F Y, H:i:s', $entry->get_submitted_on()->format( 'U' ) ) );
 				if ( $now->format( 'U' ) - $entry->get_submitted_on()->format( 'U' ) < DAY_IN_SECONDS ) :
-					echo '<br>(hace ' . esc_html( human_time_diff( $entry->get_submitted_on()->format( 'U' ) ) ) . ')';
+					/* translators: %s: tiempo transcurrido desde el envío. */
+					echo '<br>(' . esc_html( sprintf( __( 'hace %s', 'bloom-wp-forms' ), human_time_diff( $entry->get_submitted_on()->format( 'U' ) ) ) ) . ')';
 				endif;
 				break;
 			case 'notifications':
@@ -188,7 +190,9 @@ class Entries_Admin extends Abstract_Admin {
 					switch ( $send_status ) {
 						case 'scheduled':
 							echo '<details><summary>';
-							echo 'Programadas (' . count( $notifications ) . ') <span class="dashicons dashicons-clock"></span></summary>';
+							/* translators: %1$d: cantidad de notificaciones. */
+							echo esc_html( sprintf( __( 'Programadas (%1$d)', 'bloom-wp-forms' ), count( $notifications ) ) );
+							echo ' <span class="dashicons dashicons-clock"></span></summary>';
 							echo '<ul>';
 							foreach ( $notifications as $notification ) :
 								echo '<li>' . esc_html( $notification->get_email() ) . '</li>';
@@ -198,11 +202,13 @@ class Entries_Admin extends Abstract_Admin {
 							break;
 						case 'send_error':
 							echo '<details><summary>';
-							echo 'Con errores (' . count( $notifications ) . ') <span class="dashicons dashicons-no"></span></summary>';
+							/* translators: %1$d: cantidad de notificaciones. */
+							echo esc_html( sprintf( __( 'Con errores (%1$d)', 'bloom-wp-forms' ), count( $notifications ) ) );
+							echo ' <span class="dashicons dashicons-no"></span></summary>';
 							echo '<ul>';
 							foreach ( $notifications as $notification ) :
 								echo '<li>' . esc_html( $notification->get_email() );
-								echo ' - <a href="' . esc_url( Plugin::get_instance()->get_resend_url( $notification ) ) . '">Reenviar</a>';
+								echo ' - <a href="' . esc_url( Plugin::get_instance()->get_resend_url( $notification ) ) . '">' . esc_html__( 'Reenviar', 'bloom-wp-forms' ) . '</a>';
 								echo '</li>';
 							endforeach;
 							echo '</ul>';
@@ -210,7 +216,9 @@ class Entries_Admin extends Abstract_Admin {
 							break;
 						case 'send_success':
 							echo '<details><summary>';
-							echo 'Enviadas (' . count( $notifications ) . ') <span class="dashicons dashicons-yes"></span></summary>';
+							/* translators: %1$d: cantidad de notificaciones. */
+							echo esc_html( sprintf( __( 'Enviadas (%1$d)', 'bloom-wp-forms' ), count( $notifications ) ) );
+							echo ' <span class="dashicons dashicons-yes"></span></summary>';
 							echo '<ul>';
 							foreach ( $notifications as $notification ) :
 								echo '<li>' . esc_html( $notification->get_email() ) . '</li>';
@@ -220,7 +228,9 @@ class Entries_Admin extends Abstract_Admin {
 							break;
 						case 'read':
 							echo '<details><summary>';
-							echo 'Leída (' . count( $notifications ) . ') <span class="dashicons dashicons-yes"></span><span class="dashicons dashicons-yes" style="margin-right:-.5em"></span></summary>';
+							/* translators: %1$d: cantidad de notificaciones. */
+							echo esc_html( sprintf( __( 'Leída (%1$d)', 'bloom-wp-forms' ), count( $notifications ) ) );
+							echo ' <span class="dashicons dashicons-yes"></span><span class="dashicons dashicons-yes" style="margin-right:-.5em"></span></summary>';
 							echo '<ul>';
 							foreach ( $notifications as $notification ) :
 								echo '<li>' . esc_html( $notification->get_email() ) . '</li>';

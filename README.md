@@ -45,6 +45,7 @@ Ubicación: menú "Formularios" → "Ajustes" (`admin.php?page=bloom_forms_setti
 ```php
 array(
 	'general' => array(
+		'recaptcha_type'        => 'v3',
 		'recaptcha_site_key'    => '',
 		'recaptcha_site_secret' => '',
 	),
@@ -55,6 +56,8 @@ array(
 	),
 )
 ```
+
+* `recaptcha_type` acepta `v3` (invisible, sin checkbox; valor por defecto) o `v2` (checkbox "No soy un robot"); cualquier otro valor cae en `v3`. Las claves deben corresponder al tipo elegido.
 
 * La página muestra un listado de pestañas y solo el contenido de la pestaña activa, seleccionada por el parámetro GET `tab`.
 * Semántica de mezcla al guardar: solo la pestaña activa se postea; `sanitize_settings()` mezcla con el valor guardado a nivel de keys top-level, de modo que las demás pestañas se conservan intactas.
@@ -91,7 +94,15 @@ Para extenderla con una pestaña propia:
 | `bloom_forms_notification_mail_to` / `bloom_forms_notification_mail_subject` / `bloom_forms_notification_mail_message` / `bloom_forms_notification_mail_headers` | `$value`, `$notification` — partes del correo antes de enviar |
 | `bloom_forms_settings_tabs` | `array $tabs` — pestañas de la página de ajustes (`slug => label`) |
 | `bloom_forms_settings_sanitize` | `$settings`, `$input` — ajustes ya mezclados antes de guardar |
+| `bloom_forms_recaptcha_type` | `string $type` — tipo de reCAPTCHA configurado (`v3` o `v2`); valores inválidos caen en `v3` |
 | `queulat/forms/element/recaptcha__site-key` / `queulat/forms/element/recaptcha__site-secret` | `string $value` — keys del widget reCAPTCHA de Queulat (alimentadas desde la pestaña General) |
+
+# Changelog
+
+## 0.3.0
+
+* Ajuste de tipo de reCAPTCHA en la pestaña General: `v3` sin checkbox (valor por defecto) o `v2` con checkbox; las claves deben corresponder al tipo elegido.
+* Nuevo filtro `bloom_forms_recaptcha_type`.
 
 # Evento programado y CLI
 

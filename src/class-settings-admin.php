@@ -158,6 +158,7 @@ class Settings_Admin extends Abstract_Admin {
 	public static function get_defaults(): array {
 		return array(
 			'general' => array(
+				'recaptcha_type'        => 'v3',
 				'recaptcha_site_key'    => '',
 				'recaptcha_site_secret' => '',
 			),
@@ -211,11 +212,27 @@ class Settings_Admin extends Abstract_Admin {
 	public static function sanitize_settings( array $input ): array {
 		$existing            = get_option( static::OPTION_NAME, array() );
 		$settings            = wp_parse_args( (array) $input, $existing );
+		$type                = $settings['general']['recaptcha_type'] ?? $existing['general']['recaptcha_type'] ?? 'v3';
 		$settings['general'] = array(
+			'recaptcha_type'        => in_array( $type, array( 'v2', 'v3' ), true ) ? $type : 'v3',
 			'recaptcha_site_key'    => sanitize_text_field( $settings['general']['recaptcha_site_key'] ?? '' ),
 			'recaptcha_site_secret' => sanitize_text_field( $settings['general']['recaptcha_site_secret'] ?? '' ),
 		);
 		return apply_filters( 'bloom_forms_settings_sanitize', $settings, $input );
+	}
+
+	/**
+	 * Obtener el tipo de reCAPTCHA configurado
+	 *
+	 * Valores posibles: 'v3' (invisible, sin checkbox) y 'v2' (checkbox "No soy
+	 * un robot"). Cualquier otro valor cae en 'v3'.
+	 *
+	 * @return string Tipo de reCAPTCHA ('v3' o 'v2').
+	 */
+	public static function get_recaptcha_type(): string {
+		$settings = static::get_settings();
+		$type     = (string) apply_filters( 'bloom_forms_recaptcha_type', $settings['general']['recaptcha_type'] ?? 'v3' );
+		return in_array( $type, array( 'v2', 'v3' ), true ) ? $type : 'v3';
 	}
 
 	/**
@@ -308,12 +325,22 @@ class Settings_Admin extends Abstract_Admin {
 	 */
 	public static function render_general_tab() {
 		$settings = static::get_settings();
+		$type     = static::get_recaptcha_type();
 		?>
-		<h2><?php echo esc_html__( 'reCAPTCHA v2', 'bloom-wp-forms' ); ?></h2>
+		<h2><?php echo esc_html__( 'reCAPTCHA', 'bloom-wp-forms' ); ?></h2>
 		<p class="description">
-			<?php echo esc_html__( 'Configura las claves del widget "No soy un robot" (reCAPTCHA v2 checkbox). Se obtienen en Google reCAPTCHA Admin (https://www.google.com/recaptcha/admin).', 'bloom-wp-forms' ); ?>
+			<?php echo esc_html__( 'Configura el tipo de captcha a usar y sus claves. Se obtienen en Google reCAPTCHA Admin (https://www.google.com/recaptcha/admin) y deben corresponder al tipo elegido.', 'bloom-wp-forms' ); ?>
 		</p>
 		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row"><label for="bloom-forms-recaptcha-type"><?php echo esc_html__( 'Tipo de reCAPTCHA', 'bloom-wp-forms' ); ?></label></th>
+				<td>
+					<select id="bloom-forms-recaptcha-type" name="bloom_forms_settings[general][recaptcha_type]">
+						<option value="v3" <?php selected( $type, 'v3' ); ?>><?php echo esc_html__( 'Sin checkbox (reCAPTCHA v3, invisible)', 'bloom-wp-forms' ); ?></option>
+						<option value="v2" <?php selected( $type, 'v2' ); ?>><?php echo esc_html__( 'Con checkbox "No soy un robot" (reCAPTCHA v2)', 'bloom-wp-forms' ); ?></option>
+					</select>
+				</td>
+			</tr>
 			<tr>
 				<th scope="row"><label for="bloom-forms-recaptcha-site-key"><?php echo esc_html__( 'Site key', 'bloom-wp-forms' ); ?></label></th>
 				<td>

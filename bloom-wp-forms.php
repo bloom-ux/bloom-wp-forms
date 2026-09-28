@@ -3,7 +3,7 @@
  * Plugin Name: Bloom Forms
  * Plugin URI: https://github.com/bloom-ux/bloom-wp-forms/
  * Description: Custom forms scaffolding for WordPress
- * Version: 0.2.0
+ * Version: 0.3.0
  * Author: bloom.lat
  * Author URI: https://www.bloom.lat/
  * License: GPL-3.0-or-later

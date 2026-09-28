@@ -26,7 +26,7 @@ class Plugin {
 
 	use Singleton;
 
-	const VERSION                              = '0.2.0';
+	const VERSION                              = '0.3.0';
 	const INSTALLER_VERSION_OPT_NAME           = 'bloom_forms_version';
 	const ENTRIES_TABLE_NAME                   = 'bloom_forms_entries';
 	const NOTIFICATIONS_TABLE_NAME             = 'bloom_forms_notifications';

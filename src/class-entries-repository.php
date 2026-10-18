@@ -50,6 +50,8 @@ class Entries_Repository {
 	 * @return int|null ID de la entrada creada o null si falla
 	 */
 	public function create( string $form, array $data, array $meta = array() ): ?int {
+		// El token de reCAPTCHA es de un solo uso y no se almacena con los datos.
+		unset( $data[ Recaptcha::RESPONSE_FIELD_NAME ] );
 		$entry_data = array(
 			'form'         => $form,
 			'submitted_on' => wp_date( 'Y-m-d H:i:s.v' ),

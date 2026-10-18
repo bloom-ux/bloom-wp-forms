@@ -17,6 +17,12 @@ use Queulat\Helpers\Abstract_Admin;
  * activa, seleccionada por parámetro GET. El slug de cada pestaña sirve como
  * key dentro del option_value. Al guardar, los ajustes nuevos se mezclan con
  * los anteriores (solo la pestaña activa se postea).
+ *
+ * Cada formulario registrado agrega automáticamente su pestaña de
+ * destinatarios: slug = slug del formulario, label = título del formulario y
+ * payload `recipients` (lista de correos) dentro de esa key. Una
+ * implementación puede reemplazar el panel por defecto registrando la acción
+ * `bloom_forms_settings_tab__{slug}`.
  */
 class Settings_Admin extends Abstract_Admin {
 
@@ -193,11 +199,16 @@ class Settings_Admin extends Abstract_Admin {
 	/**
 	 * Comprobar si reCAPTCHA está configurado
 	 *
+	 * Usa la resolución efectiva de Queulat: constante RECAPTCHA_SITE_KEY /
+	 * RECAPTCHA_SITE_SECRET, variable de entorno o pestaña General.
+	 *
 	 * @return bool
 	 */
 	public static function is_recaptcha_configured(): bool {
-		$settings = static::get_settings();
-		return ! empty( $settings['general']['recaptcha_site_key'] ) && ! empty( $settings['general']['recaptcha_site_secret'] );
+		if ( ! class_exists( '\Queulat\Forms\Element\Recaptcha' ) ) {
+			return false;
+		}
+		return '' !== \Queulat\Forms\Element\Recaptcha::get_site_key() && '' !== \Queulat\Forms\Element\Recaptcha::get_site_secret();
 	}
 
 	/**
@@ -218,20 +229,101 @@ class Settings_Admin extends Abstract_Admin {
 			'recaptcha_site_key'    => sanitize_text_field( $settings['general']['recaptcha_site_key'] ?? '' ),
 			'recaptcha_site_secret' => sanitize_text_field( $settings['general']['recaptcha_site_secret'] ?? '' ),
 		);
+		// Cada formulario registrado es una pestaña cuyo payload es la lista
+		// de destinatarios; solo se toca la key del formulario activo (las
+		// pestañas propias de una implementación quedan a su cargo vía
+		// bloom_forms_settings_sanitize).
+		foreach ( Plugin::get_instance()->get_registered_forms_slugs() as $slug ) {
+			if ( ! array_key_exists( $slug, $input ) ) {
+				continue;
+			}
+			$form_input        = is_array( $input[ $slug ] ) ? $input[ $slug ] : array();
+			$settings[ $slug ] = array(
+				'recipients' => static::sanitize_recipients( $form_input['recipients'] ?? '' ),
+			);
+		}
 		return apply_filters( 'bloom_forms_settings_sanitize', $settings, $input );
+	}
+
+	/**
+	 * Sanitizar la lista de correos de la pestaña de un formulario.
+	 *
+	 * Los tokens inválidos o duplicados se descartan avisando con settings
+	 * error: no se rechaza el guardado completo (la API de Settings no permite
+	 * re-render del formulario con valores conservados; descartar lo inválido
+	 * es preferible a perder el guardado por un typo). La API de Settings
+	 * puede invocar el saneamiento más de una vez (update_option cae en
+	 * add_option cuando el valor guardado iguala el default registrado): un
+	 * array de correos ya saneado es una entrada válida, idempotente.
+	 *
+	 * @param mixed $raw String de correos separados por coma o lista ya saneada.
+	 * @return array Lista de correos.
+	 */
+	public static function sanitize_recipients( $raw ): array {
+		if ( is_array( $raw ) ) {
+			$raw = implode( ', ', $raw );
+		}
+		$raw    = (string) $raw;
+		$tokens = array_filter( preg_split( '/[,;\s]+/', $raw ), 'strlen' );
+		$emails = array_values( Plugin::parse_string_emails( $raw ) );
+		if ( count( $tokens ) !== count( $emails ) ) {
+			add_settings_error(
+				static::OPTION_NAME,
+				'bloom_forms_recipients_invalid',
+				__( 'Se descartaron correos electrónicos inválidos o duplicados al guardar los destinatarios.', 'bloom-wp-forms' ),
+				'warning'
+			);
+		}
+		return $emails;
+	}
+
+	/**
+	 * Obtener el mapa de destinatarios configurados por formulario registrado.
+	 *
+	 * @return array Mapa slug => lista de correos (solo formularios con correos).
+	 */
+	public static function get_recipients(): array {
+		$recipients = array();
+		foreach ( Plugin::get_instance()->get_registered_forms_slugs() as $slug ) {
+			$form_recipients = static::get_form_recipients( $slug );
+			if ( $form_recipients ) {
+				$recipients[ $slug ] = $form_recipients;
+			}
+		}
+		return $recipients;
+	}
+
+	/**
+	 * Obtener los destinatarios de un formulario.
+	 *
+	 * @param string $slug Slug del formulario.
+	 * @return array Lista de correos (vacía si no está configurado).
+	 */
+	public static function get_form_recipients( string $slug ): array {
+		$settings   = static::get_settings();
+		$recipients = $settings[ $slug ]['recipients'] ?? null;
+		return is_array( $recipients ) ? array_values( $recipients ) : array();
 	}
 
 	/**
 	 * Obtener el tipo de reCAPTCHA configurado
 	 *
 	 * Valores posibles: 'v3' (invisible, sin checkbox) y 'v2' (checkbox "No soy
-	 * un robot"). Cualquier otro valor cae en 'v3'.
+	 * un robot"). Prioridad: constante RECAPTCHA_VERSION, variable de entorno
+	 * RECAPTCHA_VERSION, pestaña General. Cualquier otro valor cae en 'v3'.
 	 *
 	 * @return string Tipo de reCAPTCHA ('v3' o 'v2').
 	 */
 	public static function get_recaptcha_type(): string {
-		$settings = static::get_settings();
-		$type     = (string) apply_filters( 'bloom_forms_recaptcha_type', $settings['general']['recaptcha_type'] ?? 'v3' );
+		if ( defined( 'RECAPTCHA_VERSION' ) ) {
+			$type = (string) RECAPTCHA_VERSION;
+		} elseif ( function_exists( 'env' ) && env( 'RECAPTCHA_VERSION' ) ) {
+			$type = (string) env( 'RECAPTCHA_VERSION' );
+		} else {
+			$settings = static::get_settings();
+			$type     = (string) ( $settings['general']['recaptcha_type'] ?? 'v3' );
+		}
+		$type = (string) apply_filters( 'bloom_forms_recaptcha_type', $type );
 		return in_array( $type, array( 'v2', 'v3' ), true ) ? $type : 'v3';
 	}
 
@@ -260,12 +352,19 @@ class Settings_Admin extends Abstract_Admin {
 	/**
 	 * Obtener las pestañas de la página de ajustes
 	 *
-	 * El slug de cada pestaña es la key dentro del option_value.
+	 * El slug de cada pestaña es la key dentro del option_value. Cada
+	 * formulario registrado agrega su propia pestaña (label = título del
+	 * formulario); un slug en colisión con una pestaña existente se respeta.
 	 *
 	 * @return array Pestañas en formato slug => label
 	 */
 	public static function get_tabs(): array {
 		$tabs = array( 'general' => __( 'General', 'bloom-wp-forms' ) );
+		foreach ( Plugin::get_instance()->get_forms() as $slug => $form ) {
+			if ( ! isset( $tabs[ $slug ] ) ) {
+				$tabs[ $slug ] = $form->get_title();
+			}
+		}
 		return apply_filters( 'bloom_forms_settings_tabs', $tabs );
 	}
 
@@ -311,7 +410,12 @@ class Settings_Admin extends Abstract_Admin {
 		echo '<form method="post" action="options.php">';
 		settings_fields( 'bloom_forms_settings_group' );
 		echo '<div class="bloom-forms-settings-tab-panel" data-tab="' . esc_attr( $current ) . '">';
-		do_action( "bloom_forms_settings_tab__{$current}" );
+		if ( has_action( "bloom_forms_settings_tab__{$current}" ) ) {
+			do_action( "bloom_forms_settings_tab__{$current}" );
+		} else {
+			// Pestaña automática de un formulario registrado.
+			static::render_form_recipients_tab( $current );
+		}
 		echo '</div>';
 		submit_button();
 		echo '</form>';
@@ -355,8 +459,41 @@ class Settings_Admin extends Abstract_Admin {
 			</tr>
 		</table>
 		<p class="description">
-			<?php echo esc_html__( 'Sin claves configuradas el formulario funciona sin captcha. También se pueden definir vía constantes RECAPTCHA_SITE_KEY / RECAPTCHA_SITE_SECRET o variables de entorno.', 'bloom-wp-forms' ); ?>
+			<?php echo esc_html__( 'Sin claves configuradas el formulario funciona sin captcha. Las claves se pueden definir vía constantes RECAPTCHA_SITE_KEY / RECAPTCHA_SITE_SECRET o variables de entorno (tienen prioridad sobre esta pestaña); el tipo se puede fijar con RECAPTCHA_VERSION.', 'bloom-wp-forms' ); ?>
 		</p>
+		<?php
+	}
+
+	/**
+	 * Renderizar la pestaña de destinatarios de un formulario
+	 *
+	 * El valor es el string de correos separados por coma que
+	 * sanitize_recipients() vuelve a parsear al guardar.
+	 *
+	 * @param string $slug Slug del formulario (key de la pestaña).
+	 * @return void
+	 */
+	public static function render_form_recipients_tab( string $slug ) {
+		settings_errors( static::OPTION_NAME );
+		$form = Plugin::get_instance()->get_form( $slug );
+		if ( ! $form ) {
+			return;
+		}
+		?>
+		<h2><?php echo esc_html( $form->get_title() ); ?></h2>
+		<p class="description">
+			<?php echo esc_html__( 'Correos a los que se notifica cada envío de este formulario; sepáralos con coma. Un formulario sin destinatarios no genera notificaciones.', 'bloom-wp-forms' ); ?>
+		</p>
+		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row">
+					<label for="bloom-forms-recipients-<?php echo esc_attr( $slug ); ?>"><?php echo esc_html__( 'Destinatarios', 'bloom-wp-forms' ); ?></label>
+				</th>
+				<td>
+					<input class="regular-text" type="text" id="bloom-forms-recipients-<?php echo esc_attr( $slug ); ?>" name="bloom_forms_settings[<?php echo esc_attr( $slug ); ?>][recipients]" value="<?php echo esc_attr( implode( ', ', static::get_form_recipients( $slug ) ) ); ?>" placeholder="correo@ejemplo.cl, otro@ejemplo.cl">
+				</td>
+			</tr>
+		</table>
 		<?php
 	}
 }

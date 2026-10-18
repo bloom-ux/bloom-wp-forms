@@ -14,7 +14,8 @@ Encore.setOutputPath('assets/dist')
 	.enableSassLoader()
 	.enablePostCssLoader()
 	.addPlugin(new DependencyExtractionWebpackPlugin())
-	.addStyleEntry('backend-styles', './assets/src/sass/backend.scss');
+	.addStyleEntry('backend-styles', './assets/src/sass/backend.scss')
+	.addEntry('recaptcha-v3', './assets/src/js/recaptcha-v3.js');
 
 /**
  * Webpack configuration object.

@@ -1,0 +1,21 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "bloom-forms/form-picker",
+	"version": "0.1.0",
+	"title": "Formulario",
+	"category": "widgets",
+	"icon": "feedback",
+	"description": "Inserta un formulario activo seleccionando su tipo.",
+	"keywords": [ "formulario", "formularios" ],
+	"attributes": {
+		"form_slug": { "type": "string", "default": "" }
+	},
+	"supports": {
+		"html": false,
+		"reusable": false,
+		"lock": false
+	},
+	"textdomain": "bloom-wp-forms",
+	"editorScript": "file:./index.js"
+}

@@ -136,6 +136,10 @@ class Plugin {
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
 		add_action( 'init', array( $this, 'maybe_admin_redirect' ) );
 		add_action( 'switch_blog', array( $this, 'switched_blog' ) );
+		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_front_scripts' ) );
+		add_action( 'init', array( $this, 'register_blocks' ) );
+		add_action( 'enqueue_block_editor_assets', array( $this, 'enqueue_block_editor_assets' ) );
+		add_filter( 'site_status_tests', array( static::class, 'add_site_health_test' ) );
 	}
 
 	/**
@@ -206,6 +210,121 @@ class Plugin {
 		}
 		$this->asset_loader->enqueue_style( 'backend-styles.css' );
 		wp_enqueue_script( 'htmx.org', plugins_url( 'assets/js/htmx.min.js', dirname( __DIR__ ) . '/bloom-wp-forms.php' ), array(), '1.9.10', array( 'strategy' => 'defer' ) );
+	}
+
+	/**
+	 * Encolar htmx en el front cuando la página tiene formularios
+	 *
+	 * Los formularios emiten atributos hx-* que requieren htmx; sin el script
+	 * degradan a POST normal. La detección mira el post actual: formularios
+	 * renderizados solo desde templates no disparan el encolado.
+	 *
+	 * @return void
+	 */
+	public function enqueue_front_scripts() {
+		if ( ! is_singular() ) {
+			return;
+		}
+		$post = get_post();
+		if ( ! $post ) {
+			return;
+		}
+		$has_block     = has_block( 'bloom-forms/form-picker', $post );
+		$has_shortcode = array_reduce(
+			$this->get_registered_forms_slugs(),
+			fn( $carry, $slug ) => $carry || has_shortcode( $post->post_content, $slug ),
+			false
+		);
+		if ( ! $has_block && ! $has_shortcode ) {
+			return;
+		}
+		wp_enqueue_script(
+			'htmx.org',
+			plugins_url( 'assets/js/htmx.min.js', dirname( __DIR__ ) . '/bloom-wp-forms.php' ),
+			array(),
+			'1.9.10',
+			array( 'strategy' => 'defer' )
+		);
+	}
+
+	/**
+	 * Registrar los bloques del plugin
+	 *
+	 * El bloque Formulario vive en build/blocks/form-picker (generado con
+	 * npm run build:blocks). Sin build el sitio sigue funcionando: solo se
+	 * registra un aviso en el log.
+	 *
+	 * @return void
+	 */
+	public function register_blocks() {
+		$block_json = dirname( __DIR__ ) . '/build/blocks/form-picker/block.json';
+		if ( ! is_readable( $block_json ) ) {
+			$this->logger?->warning( 'Bloque bloom-forms/form-picker sin build; ejecuta npm run build:blocks' );
+			return;
+		}
+		register_block_type(
+			dirname( __DIR__ ) . '/build/blocks/form-picker',
+			array( 'render_callback' => array( $this, 'render_form_picker' ) )
+		);
+	}
+
+	/**
+	 * Renderizar el bloque Formulario
+	 *
+	 * El bloque renderiza el shortcode cuyo tag es el slug del formulario;
+	 * cada implementación registra ese shortcode (equal al slug registrado
+	 * con Plugin::register_form()).
+	 *
+	 * @param array $attributes Atributos del bloque.
+	 * @return string HTML del formulario o aviso para editores.
+	 */
+	public function render_form_picker( array $attributes ): string {
+		$slug = sanitize_key( $attributes['form_slug'] ?? '' );
+		if ( '' === $slug ) {
+			return '';
+		}
+		$form = $this->get_form( $slug );
+		if ( ! $form || ! shortcode_exists( $slug ) ) {
+			if ( ! current_user_can( 'edit_posts' ) ) {
+				return '';
+			}
+			return '<p class="bloom-forms-block-missing">' . sprintf(
+				/* translators: %s: slug del formulario solicitado. */
+				esc_html__( 'El formulario %s no está disponible: no hay un shortcode registrado con ese slug.', 'bloom-wp-forms' ),
+				'<code>' . esc_html( $slug ) . '</code>'
+			) . '</p>';
+		}
+		return do_shortcode( "[{$slug}]" );
+	}
+
+	/**
+	 * Entregar los formularios activos al editor del bloque Formulario
+	 *
+	 * Los datos viajan como variable global previa al script del bloque; el
+	 * handle lo deriva WordPress del editorScript "file:./index.js".
+	 *
+	 * @return void
+	 */
+	public function enqueue_block_editor_assets() {
+		if ( ! wp_script_is( 'bloom-forms-form-picker-editor-script', 'registered' ) ) {
+			return; // Bloque sin build.
+		}
+		wp_enqueue_script( 'bloom-forms-form-picker-editor-script' );
+		wp_add_inline_script(
+			'bloom-forms-form-picker-editor-script',
+			'window.bloomFormsData = ' . wp_json_encode(
+				array(
+					'forms' => array_map(
+						fn( $form ) => array(
+							'slug'  => $form->get_slug(),
+							'title' => $form->get_title(),
+						),
+						array_values( $this->get_forms() )
+					),
+				)
+			) . ';',
+			'before'
+		);
 	}
 
 	/**
@@ -497,6 +616,105 @@ class Plugin {
 	}
 
 	/**
+	 * Agregar el test de destinatarios a Salud del sitio
+	 *
+	 * @param array $tests Tests registrados (direct/async).
+	 * @return array
+	 */
+	public static function add_site_health_test( array $tests ): array {
+		$tests['direct']['bloom_forms_recipients'] = array(
+			'label' => __( 'Destinatarios de formularios', 'bloom-wp-forms' ),
+			'test'  => array( static::class, 'test_form_recipients' ),
+		);
+		return $tests;
+	}
+
+	/**
+	 * Ejecutar el test de destinatarios contra los formularios activos
+	 *
+	 * @return array Resultado en formato de test directo de Site Health.
+	 */
+	public static function test_form_recipients(): array {
+		return static::get_form_recipients_test_result(
+			static::get_instance()->get_forms(),
+			Settings_Admin::get_recipients()
+		);
+	}
+
+	/**
+	 * Calcular el resultado del test de destinatarios (puro, testeable)
+	 *
+	 * @param array $forms      Formularios registrados.
+	 * @param array $recipients Mapa slug => correos configurados.
+	 * @return array Resultado en formato de test directo de Site Health.
+	 */
+	public static function get_form_recipients_test_result( array $forms, array $recipients ): array {
+		$missing = array_reduce(
+			$forms,
+			function ( $carry, $form ) use ( $recipients ) {
+				$slug = $form->get_slug();
+				if ( empty( $recipients[ $slug ] ) ) {
+					$carry[] = array(
+						'slug'  => $slug,
+						'title' => $form->get_title(),
+					);
+				}
+				return $carry;
+			},
+			array()
+		);
+
+		$result = array(
+			'test'        => 'bloom_forms_recipients',
+			'status'      => 'good',
+			'badge'       => array(
+				'label' => __( 'Formularios', 'bloom-wp-forms' ),
+				'color' => 'blue',
+			),
+			'label'       => empty( $forms )
+				? __( 'No hay formularios activos', 'bloom-wp-forms' )
+				: __( 'Los formularios activos tienen destinatarios configurados', 'bloom-wp-forms' ),
+			'description' => '<p>' . esc_html__( 'Los envíos de cada formulario se notificarán a los destinatarios definidos en la pestaña del formulario en Formularios → Ajustes.', 'bloom-wp-forms' ) . '</p>',
+			'actions'     => '',
+		);
+		if ( empty( $missing ) ) {
+			return $result;
+		}
+
+		$result['status']      = 'critical';
+		$result['label']       = __( 'Formularios sin destinatarios configurados', 'bloom-wp-forms' );
+		$result['description'] = '<p>' . esc_html__( 'Los siguientes formularios no tienen destinatarios configurados; sus envíos no llegarán a nadie:', 'bloom-wp-forms' ) . '</p><ul>'
+			. implode(
+				'',
+				array_map(
+					fn( $item ) => '<li><a href="' . esc_url( static::get_settings_tab_url( $item['slug'] ) ) . '">'
+						. esc_html( $item['title'] ) . '</a> <code>' . esc_html( $item['slug'] ) . '</code></li>',
+					$missing
+				)
+			)
+			. '</ul>';
+		$result['actions']     = '<p><a class="button button-primary" href="' . esc_url( static::get_settings_tab_url( $missing[0]['slug'] ) ) . '">'
+			. esc_html__( 'Configurar destinatarios', 'bloom-wp-forms' ) . '</a></p>';
+		return $result;
+	}
+
+	/**
+	 * Obtener la URL de una pestaña de la página de ajustes
+	 *
+	 * @param string $slug Slug de la pestaña (slug del formulario).
+	 * @return string URL de la pestaña.
+	 */
+	public static function get_settings_tab_url( string $slug ): string {
+		return add_query_arg(
+			array(
+				'page' => Settings_Admin::OPTION_NAME,
+				'tab'  => $slug,
+			),
+			admin_url( 'admin.php' )
+		);
+	}
+
+	/**
 	 * Obtener tamaño de archivo en formato legible
 	 *
 	 * @param int $bytes Tamaño en bytes.
@@ -624,6 +842,8 @@ class Plugin {
 		 */
 		do_action( "bloom_forms_{$form->get_slug()}__submit_success", $form, $values, $created );
 
+		$this->notify_form_recipients( $form, $values, (int) $created );
+
 		if ( is_admin() ) {
 			$redirect_url = add_query_arg(
 				array(
@@ -636,17 +856,72 @@ class Plugin {
 			);
 			wp_safe_redirect( $redirect_url );
 		} else {
+			$redirect_url = filter_input( INPUT_POST, '_wp_http_referer', FILTER_SANITIZE_URL );
+			if ( ! $redirect_url ) {
+				// Sin referer se vuelve a la URL actual, que puede incluir
+				// parámetros de contexto (p. ej. previsualización de borrador).
+				$redirect_url = esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ?? '' ) );
+			}
 			wp_safe_redirect(
 				add_query_arg(
 					'status',
 					'success',
-					filter_input( INPUT_POST, '_wp_http_referer', FILTER_SANITIZE_URL )
+					$redirect_url
 				),
 				303
 			);
 		}
 
 		exit;
+	}
+
+	/**
+	 * Notificar a los destinatarios configurados de un formulario por cada envío exitoso
+	 *
+	 * Crea una notificación por destinatario (una fila por correo, igual que
+	 * Send_Notification_Task y el reenvío manual/CLI) y la envía con el modo
+	 * definido en Notification::send() (hoy síncrono). Sin destinatarios
+	 * configurados no se registra nada: el estado queda visible en Salud del
+	 * sitio y queda registro en el log del canal bloom_forms.
+	 *
+	 * @param Form  $form     Formulario del envío.
+	 * @param array $values   Valores saneados del envío.
+	 * @param int   $entry_id ID del envío creado.
+	 * @return void
+	 */
+	public function notify_form_recipients( Form $form, array $values, int $entry_id ): void {
+		$emails = $form->get_notification_emails( $values );
+		if ( empty( $emails ) ) {
+			$this->logger?->warning(
+				'Envío de formulario {form} sin destinatarios configurados; no se envió notificación',
+				array(
+					'form'     => $form->get_slug(),
+					'entry_id' => $entry_id,
+				)
+			);
+			return;
+		}
+		foreach ( $emails as $email ) {
+			$notification = Notification::make(
+				array(
+					'form'     => $form->get_slug(),
+					'entry_id' => $entry_id,
+					'email'    => $email,
+				)
+			);
+			if ( ! $notification ) {
+				$this->logger?->error(
+					'No se pudo registrar la notificación de {form} para {email}',
+					array(
+						'form'     => $form->get_slug(),
+						'email'    => $email,
+						'entry_id' => $entry_id,
+					)
+				);
+				continue;
+			}
+			$notification->send();
+		}
 	}
 
 	/**

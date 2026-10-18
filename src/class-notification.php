@@ -383,7 +383,9 @@ class Notification {
 			return $custom_subject;
 		}
 		$form   = $this->get_form() ? $this->get_form()->get_title() : '';
-		$sender = $this->get_entry() ? $this->get_entry()->get_data()->from_name : '';
+		$entry  = $this->get_entry();
+		$values = $entry ? (array) $entry->get_data() : array();
+		$sender = $values['from_name'] ?? '';
 		return "[{$form}] Envío de {$sender}";
 	}
 

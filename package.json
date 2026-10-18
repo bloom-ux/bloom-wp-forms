@@ -6,7 +6,9 @@
   "private": true,
   "scripts": {
     "build": "encore production",
-    "start": "encore dev --watch"
+    "start": "encore dev --watch",
+    "build:blocks": "wp-scripts build --config webpack.blocks.config.js",
+    "start:blocks": "wp-scripts start --config webpack.blocks.config.js"
   },
   "devDependencies": {
     "@symfony/webpack-encore": "^4.2.0",

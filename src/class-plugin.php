@@ -40,6 +40,13 @@ class Plugin {
 	private array $forms = array();
 
 	/**
+	 * Errores de validación del último POST, por slug de formulario
+	 *
+	 * @var array
+	 */
+	private array $submit_errors = array();
+
+	/**
 	 * Pantalla de administración de envíos de formulario
 	 *
 	 * @var Entries_Admin
@@ -616,6 +623,19 @@ class Plugin {
 	}
 
 	/**
+	 * Obtener los errores de validación del último POST de un formulario
+	 *
+	 * A diferencia de revalidar el POST, estos errores se calcularon con los
+	 * archivos subidos ya procesados.
+	 *
+	 * @param string $slug Slug del formulario.
+	 * @return array Errores indexados por campo (vacío si no hubo).
+	 */
+	public function get_submit_errors( string $slug ): array {
+		return $this->submit_errors[ $slug ] ?? array();
+	}
+
+	/**
 	 * Agregar el test de destinatarios a Salud del sitio
 	 *
 	 * @param array $tests Tests registrados (direct/async).
@@ -772,38 +792,66 @@ class Plugin {
 		$postdata = wp_unslash( $_POST );
 
 		foreach ( $_FILES as $key => $uploaded_file ) {
-			// No se sube archivo en ese campo del formulario, saltar.
-			if ( isset( $_FILES[ $key ]['error'] ) && 4 === $_FILES[ $key ]['error'] ) {
-				continue;
-			}
-			$wp_upload = wp_handle_upload(
-				$uploaded_file,
-				array(
-					'action' => "bloom_form_{$form->get_slug()}__submit",
-				)
-			);
-			if ( ! empty( $wp_upload['error'] ) ) {
-				if ( $this->logger ) {
-					$this->logger->error(
-						'Error al subir archivo {filename}',
-						array(
-							'file_key'      => $key,
-							'filename'      => $uploaded_file['name'],
-							'uploaded_file' => $uploaded_file,
-							'error'         => $wp_upload,
-						)
+			// Un campo puede traer un archivo o varios (name="campo[]").
+			$files = array();
+			if ( is_array( $uploaded_file['name'] ?? null ) ) {
+				foreach ( array_keys( $uploaded_file['name'] ) as $index ) {
+					$files[] = array(
+						'name'     => $uploaded_file['name'][ $index ],
+						'type'     => $uploaded_file['type'][ $index ],
+						'tmp_name' => $uploaded_file['tmp_name'][ $index ],
+						'error'    => $uploaded_file['error'][ $index ],
+						'size'     => $uploaded_file['size'][ $index ],
 					);
 				}
-				wp_die( wp_kses_post( "{$wp_upload['error']} <b>" . esc_html__( 'Archivo:', 'bloom-wp-forms' ) . " {$uploaded_file['name']}</b>" ) );
+			} else {
+				$files[] = $uploaded_file;
 			}
 
-			$postdata[ $key ] = $this->process_upload( $wp_upload );
+			$results = array();
+			foreach ( $files as $file ) {
+				// No se sube archivo en ese campo del formulario, saltar.
+				if ( 4 === (int) $file['error'] ) {
+					continue;
+				}
+				$wp_upload = wp_handle_upload(
+					$file,
+					array(
+						'action' => "bloom_forms_{$form->get_slug()}__submit",
+					)
+				);
+				if ( ! empty( $wp_upload['error'] ) ) {
+					if ( $this->logger ) {
+						$this->logger->error(
+							'Error al subir archivo {filename}',
+							array(
+								'file_key'      => $key,
+								'filename'      => $file['name'],
+								'uploaded_file' => $file,
+								'error'         => $wp_upload,
+							)
+						);
+					}
+					wp_die( wp_kses_post( "{$wp_upload['error']} <b>" . esc_html__( 'Archivo:', 'bloom-wp-forms' ) . " {$file['name']}</b>" ) );
+				}
+
+				$results[] = $this->process_upload( $wp_upload );
+			}
+
+			if ( ! $results ) {
+				continue;
+			}
+			// Un solo archivo conserva su forma; varios se guardan como lista.
+			$postdata[ $key ] = is_array( $uploaded_file['name'] ?? null ) ? $results : $results[0];
 		}
 
 		$values          = $form->sanitize_data( $postdata );
 		$validate_errors = $form->get_validation_errors( $values );
 
 		if ( ! empty( $validate_errors ) ) {
+			// El re-render del formulario reutiliza estos errores: la subida de
+			// archivos ya se procesó y $_FILES no vuelve a estar disponible.
+			$this->submit_errors[ $form->get_slug() ] = $validate_errors;
 			// Continúa ejecución de render para mostrar errores a usuario.
 			return;
 		}

@@ -215,12 +215,15 @@ class Settings_Admin extends Abstract_Admin {
 	 * Sanitizar ajustes enviados desde el formulario
 	 *
 	 * Solo la pestaña activa se postea; las demás keys del option_value se
-	 * conservan del valor guardado (mezcla a nivel de keys top-level).
+	 * conservan del valor guardado (mezcla a nivel de keys top-level). El
+	 * input puede llegar null cuando la pestaña no tiene campos postables
+	 * (p. ej. todos fijados por entorno y deshabilitados).
 	 *
-	 * @param array $input Datos enviados por el formulario de ajustes.
+	 * @param mixed $input Datos enviados por el formulario de ajustes.
 	 * @return array Datos saneados
 	 */
-	public static function sanitize_settings( array $input ): array {
+	public static function sanitize_settings( $input ): array {
+		$input               = is_array( $input ) ? $input : array();
 		$existing            = get_option( static::OPTION_NAME, array() );
 		$settings            = wp_parse_args( (array) $input, $existing );
 		$type                = $settings['general']['recaptcha_type'] ?? $existing['general']['recaptcha_type'] ?? 'v3';
@@ -328,6 +331,26 @@ class Settings_Admin extends Abstract_Admin {
 	}
 
 	/**
+	 * Obtener el valor de reCAPTCHA fijado por constante o variable de entorno
+	 *
+	 * No reutiliza Queulat\Forms\Element\Recaptcha::get_site_key()/get_site_secret()
+	 * porque esos aplican el filtro de la pestaña como último recurso y no
+	 * permiten distinguir si el valor vino de entorno/constante.
+	 *
+	 * @param string $constant Nombre de la constante (p. ej. RECAPTCHA_SITE_KEY).
+	 * @return string Valor fijado, o '' si no lo hay.
+	 */
+	public static function get_env_recaptcha_value( string $constant ): string {
+		if ( defined( $constant ) ) {
+			return (string) constant( $constant );
+		}
+		if ( function_exists( 'env' ) && env( $constant ) ) {
+			return (string) env( $constant );
+		}
+		return '';
+	}
+
+	/**
 	 * Filtrar la site key hacia el elemento Recaptcha de Queulat
 	 *
 	 * @param string $site_key Valor entrante del filtro de Queulat.
@@ -428,8 +451,11 @@ class Settings_Admin extends Abstract_Admin {
 	 * @return void
 	 */
 	public static function render_general_tab() {
-		$settings = static::get_settings();
-		$type     = static::get_recaptcha_type();
+		$settings    = static::get_settings();
+		$type        = static::get_recaptcha_type();
+		$env_version = static::get_env_recaptcha_value( 'RECAPTCHA_VERSION' );
+		$env_key     = static::get_env_recaptcha_value( 'RECAPTCHA_SITE_KEY' );
+		$env_secret  = static::get_env_recaptcha_value( 'RECAPTCHA_SITE_SECRET' );
 		?>
 		<h2><?php echo esc_html__( 'reCAPTCHA', 'bloom-wp-forms' ); ?></h2>
 		<p class="description">
@@ -439,7 +465,7 @@ class Settings_Admin extends Abstract_Admin {
 			<tr>
 				<th scope="row"><label for="bloom-forms-recaptcha-type"><?php echo esc_html__( 'Tipo de reCAPTCHA', 'bloom-wp-forms' ); ?></label></th>
 				<td>
-					<select id="bloom-forms-recaptcha-type" name="bloom_forms_settings[general][recaptcha_type]">
+					<select id="bloom-forms-recaptcha-type" name="bloom_forms_settings[general][recaptcha_type]" <?php disabled( '' !== $env_version ); ?>>
 						<option value="v3" <?php selected( $type, 'v3' ); ?>><?php echo esc_html__( 'Sin checkbox (reCAPTCHA v3, invisible)', 'bloom-wp-forms' ); ?></option>
 						<option value="v2" <?php selected( $type, 'v2' ); ?>><?php echo esc_html__( 'Con checkbox "No soy un robot" (reCAPTCHA v2)', 'bloom-wp-forms' ); ?></option>
 					</select>
@@ -448,13 +474,21 @@ class Settings_Admin extends Abstract_Admin {
 			<tr>
 				<th scope="row"><label for="bloom-forms-recaptcha-site-key"><?php echo esc_html__( 'Site key', 'bloom-wp-forms' ); ?></label></th>
 				<td>
-					<input class="regular-text" type="text" id="bloom-forms-recaptcha-site-key" name="bloom_forms_settings[general][recaptcha_site_key]" value="<?php echo esc_attr( $settings['general']['recaptcha_site_key'] ); ?>">
+					<?php if ( '' !== $env_key ) : ?>
+						<input class="regular-text" type="password" id="bloom-forms-recaptcha-site-key" value="<?php echo esc_attr( $env_key ); ?>" disabled>
+					<?php else : ?>
+						<input class="regular-text" type="text" id="bloom-forms-recaptcha-site-key" name="bloom_forms_settings[general][recaptcha_site_key]" value="<?php echo esc_attr( $settings['general']['recaptcha_site_key'] ); ?>">
+					<?php endif; ?>
 				</td>
 			</tr>
 			<tr>
 				<th scope="row"><label for="bloom-forms-recaptcha-site-secret"><?php echo esc_html__( 'Site secret', 'bloom-wp-forms' ); ?></label></th>
 				<td>
-					<input class="regular-text" type="text" id="bloom-forms-recaptcha-site-secret" name="bloom_forms_settings[general][recaptcha_site_secret]" value="<?php echo esc_attr( $settings['general']['recaptcha_site_secret'] ); ?>">
+					<?php if ( '' !== $env_secret ) : ?>
+						<input class="regular-text" type="password" id="bloom-forms-recaptcha-site-secret" value="<?php echo esc_attr( $env_secret ); ?>" disabled>
+					<?php else : ?>
+						<input class="regular-text" type="text" id="bloom-forms-recaptcha-site-secret" name="bloom_forms_settings[general][recaptcha_site_secret]" value="<?php echo esc_attr( $settings['general']['recaptcha_site_secret'] ); ?>">
+					<?php endif; ?>
 				</td>
 			</tr>
 		</table>

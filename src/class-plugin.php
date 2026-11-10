@@ -534,7 +534,14 @@ class Plugin {
 				'bloom_forms__retry_scheduled'
 			);
 		}
-		flush_rewrite_rules();
+
+		/**
+		 * flush_rewrite_rules() is not reliable, because it's done on the
+		 * context of the site where the request was originated.
+		 * This defers the rules regeneration to the next request to the
+		 * respective site.
+		 */
+		delete_option( 'rewrite_rules' );
 	}
 
 	/**

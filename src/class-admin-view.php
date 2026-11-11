@@ -8,9 +8,7 @@
 namespace Bloom_UX\WP_Forms;
 
 use Queulat\Forms\Form_View;
-use Queulat\Forms\Element\Div;
 use Queulat\Forms\Element\Input;
-use Queulat\Forms\Element\Textarea;
 
 /**
  * Visualización de una entrada de formulario en el panel de administración
@@ -42,37 +40,19 @@ class Admin_View extends Form_View {
 		do_action( 'bloom_forms_admin_entry_detail_before', $this );
 		$out .= ob_get_clean();
 
-		foreach ( $this->form->get_children() as $element ) {
-			$value = is_callable( array( $element, 'get_value' ) ) ? $element->get_value() : null;
-			if (
-				( ! $element instanceof Div && ! $value )
-			) {
-				continue;
-			}
-			$out .= '<div style="display:grid;grid-template-columns:20rem 1fr;gap:1rem;margin:0;padding:1rem 0;border-bottom:1px solid rgba(0, 0, 0, 0.15);line-height:1.85">';
-			if ( $element instanceof Div ) {
-				$out .= $element;
+		$entry_data = (array) ( $this->form->get_property( 'entry_data' ) ?? array() );
+		$rows       = View_Values::rows( iterator_to_array( $this->form->get_children() ), $entry_data );
+		foreach ( $rows as $row ) {
+			$value              = $row['value'];
+			$out               .= '<div style="display:grid;grid-template-columns:20rem 1fr;gap:1rem;margin:0;padding:1rem 0;border-bottom:1px solid rgba(0, 0, 0, 0.15);line-height:1.85">';
+			$out               .= '<div><b style="font-weight:500">' . esc_html( $row['label'] ) . '</b></div>';
+			$field_value_output = apply_filters( 'bloom_forms_admin_view_element_value', '', $row['element'], $this );
+			if ( $field_value_output ) {
+				$out .= $field_value_output;
+			} elseif ( $row['element'] instanceof Input && 'date' === $row['element']->get_attribute( 'type' ) && is_string( $value ) && '' !== $value ) {
+				$out .= '<div>' . esc_html( wp_date( 'd F Y', strtotime( $value . ' 12:00:00' ) ) ) . '</div>';
 			} else {
-				if ( is_callable( array( $element, 'get_label' ) ) && ! empty( $element->get_label() ) ) {
-					$out .= '<div><b style="font-weight:500">' . esc_html( $element->get_label() ) . '</b></div>';
-				}
-				if ( is_callable( array( $element, 'get_value' ) ) ) {
-					$field_value_output = apply_filters( 'bloom_forms_admin_view_element_value', '', $element, $this );
-					if ( $field_value_output ) {
-						$out .= $field_value_output;
-					} elseif ( $element instanceof Textarea ) {
-						$out .= nl2br( esc_html( $value ) );
-					} elseif ( $element instanceof Input && $element->get_attribute( 'type' ) === 'date' ) {
-						// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
-						$value = is_string( $element->get_value() ) ? $element->get_value() : '<pre>' . print_r( (array) $element->get_value(), true ) . '</pre>';
-						$value = wp_date( 'd F Y', strtotime( $value . ' 12:00:00' ) );
-						$out  .= '<div>' . esc_html( $value ) . '</div>';
-					} else {
-						// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
-						$value = is_string( $element->get_value() ) ? $element->get_value() : '<pre>' . print_r( (array) $element->get_value(), true ) . '</pre>';
-						$out  .= '<div>' . esc_html( $value ) . '</div>';
-					}
-				}
+				$out .= '<div>' . $row['html'] . '</div>';
 			}
 			$out .= '</div>';
 		}

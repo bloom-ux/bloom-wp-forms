@@ -15,6 +15,7 @@ $theform->set_view( Admin_View::class );
 $theform->set_property( 'title', $entry->get_form()->get_title() );
 $theform->set_property( 'submitted_date', $entry->get_submitted_on() );
 $values = (array) $entry->get_data();
+$theform->set_property( 'entry_data', $values );
 foreach ( $entry->get_form()->get_fields() as $field ) {
 	$can_set_value = is_callable( array( $field, 'get_name' ) ) && is_callable( array( $field, 'set_value' ) ) ? $field->get_name() : null;
 	if ( $can_set_value && ! empty( $values[ $can_set_value ] ) ) {
